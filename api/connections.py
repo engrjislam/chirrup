@@ -1,274 +1,11 @@
-'''
-PWP course exercise 1 database.py used as a template for implementation
-
-Created on 13.02.2013
-
-Modified on 05.02.2016
-
-Provides the database API to access the forum persistent data.
-
-@author: ivan
-'''
+# course exercise1 database.py used as a template
 
 from datetime import datetime
-import time, sqlite3, re, os
+import time, sqlite3, re
 #Default paths for .db and .sql files to create and populate the database.
-DEFAULT_DB_PATH = 'db/forum.db'
+DEFAULT_DB_PATH = 'db/chat_app.db'
 DEFAULT_SCHEMA = "db/forum_schema_dump.sql"
 DEFAULT_DATA_DUMP = "db/forum_data_dump.sql"
-
-
-class Engine(object):
-    '''
-    Abstraction of the database.
-
-    It includes tools to create, configure,
-    populate and connect to the sqlite file. You can access the Connection
-    instance, and hence, to the database interface itself using the method
-    :py:meth:`connection`.
-
-    :Example:
-
-    >>> engine = Engine()
-    >>> con = engine.connect()
-
-    :param db_path: The path of the database file (always with respect to the
-        calling script. If not specified, the Engine will use the file located
-        at *db/forum.db*
-
-    '''
-    def __init__(self, db_path=None):
-        '''
-        '''
-
-        super(Engine, self).__init__()
-        if db_path is not None:
-            self.db_path = db_path
-        else:
-            self.db_path = DEFAULT_DB_PATH
-
-    def connect(self):
-        '''
-        Creates a connection to the database.
-
-        :return: A Connection instance
-        :rtype: Connection
-
-        '''
-        return Connection(self.db_path)
-
-    def remove_database(self):
-        '''
-        Removes the database file from the filesystem.
-
-        '''
-        if os.path.exists(self.db_path):
-            #THIS REMOVES THE DATABASE STRUCTURE
-            os.remove(self.db_path)
-
-    def clear(self):
-        '''
-        Purge the database removing all records from the tables. However,
-        it keeps the database schema (meaning the table structure)
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        #THIS KEEPS THE SCHEMA AND REMOVE VALUES
-        con = sqlite3.connect(self.db_path)
-        #Activate foreing keys support
-        cur = con.cursor()
-        cur.execute(keys_on)
-        with con:
-            cur = con.cursor()
-            cur.execute("DELETE FROM messages")
-            cur.execute("DELETE FROM users")
-            #NOTE since we have ON DELETE CASCADE BOTH IN users_profile AND
-            #friends, WE DO NOT HAVE TO WORRY TO CLEAR THOSE TABLES.
-
-    #METHODS TO CREATE AND POPULATE A DATABASE USING DIFFERENT SCRIPTS
-    def create_tables(self, schema=None):
-        '''
-        Create programmatically the tables from a schema file.
-
-        :param schema: path to the .sql schema file. If this parmeter is
-            None, then *db/forum_schema_dump.sql* is utilized.
-
-        '''
-        con = sqlite3.connect(self.db_path)
-        if schema is None:
-            schema = DEFAULT_SCHEMA
-        try:
-            with open(schema) as f:
-                sql = f.read()
-                cur = con.cursor()
-                cur.executescript(sql)
-        finally:
-            con.close()
-
-    def populate_tables(self, dump=None):
-        '''
-        Populate programmatically the tables from a dump file.
-
-        :param dump:  path to the .sql dump file. If this parmeter is
-            None, then *db/forum_data_dump.sql* is utilized.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        con = sqlite3.connect(self.db_path)
-        #Activate foreing keys support
-        cur = con.cursor()
-        cur.execute(keys_on)
-        #Populate database from dump
-        if dump is None:
-            dump = DEFAULT_DATA_DUMP
-        with open (dump) as f:
-            sql = f.read()
-            cur = con.cursor()
-            cur.executescript(sql)
-
-    #METHODS TO CREATE THE TABLES PROGRAMMATICALLY WITHOUT USING SQL SCRIPT
-    def create_messages_table(self):
-        '''
-        Create the table ``messages`` programmatically, without using .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE messages(message_id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    title TEXT, body TEXT, timestamp INTEGER, \
-                    ip TEXT, timesviewed INTEGER, \
-                    reply_to INTEGER, \
-                    user_nickname TEXT, user_id INTEGER, \
-                    editor_nickname TEXT, \
-                    FOREIGN KEY(reply_to) REFERENCES messages(message_id) \
-                    ON DELETE CASCADE, \
-                    FOREIGN KEY(user_id,user_nickname) \
-                    REFERENCES users(user_id, nickname) ON DELETE SET NULL)'
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-                return False
-        return True
-
-    def create_users_table(self):
-        '''
-        Create the table ``users`` programmatically, without using .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE users(user_id INTEGER PRIMARY KEY AUTOINCREMENT,\
-                                    nickname TEXT UNIQUE, regDate INTEGER,\
-                                    lastLogin INTEGER, timesviewed INTEGER,\
-                                    UNIQUE(user_id, nickname))'
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-                return False
-        return True
-
-    def create_users_profile_table(self):
-        '''
-        Create the table ``users_profile`` programmatically, without using
-        .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        '''
-        #TASK3 TODO#
-        Write the SQL Statement and neccesary codeto create users_profile table
-        '''
-
-        # FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE, \
-        stmnt = 'CREATE TABLE users_profile_table(user_id INTEGER PRIMARY KEY, \
-                                    firstname TEXT, \
-                                    lastname TEXT, \
-                                    email TEXT, \
-                                    website TEXT, \
-                                    picture TEXT, \
-                                    mobile TEXT, \
-                                    skype TEXT, \
-                                    age INTEGER, \
-                                    residence TEXT, \
-                                    gender TEXT, \
-                                    signature TEXT, \
-                                    avatar TEXT, \
-                                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE)'
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-                return False
-
-        return True
-
-    def create_friends_table(self):
-        '''
-        Create the table ``friends`` programmatically, without using .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE friends (user_id INTEGER, friend_id INTEGER, \
-                     PRIMARY KEY(user_id, friend_id), \
-                     FOREIGN KEY(user_id) REFERENCES users(user_id) \
-                     ON DELETE CASCADE, \
-                     FOREIGN KEY(friend_id) REFERENCES users(user_id) \
-                     ON DELETE CASCADE)'
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-        return None
 
 
 class Connection(object):
@@ -642,92 +379,34 @@ class Connection(object):
             * test_delete_message_malformed_id
             * test_delete_message_noexisting_id
         '''
-        stmnt = 'DELETE FROM messages WHERE %s;' % messageid
 
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
+        # Cursor and row initialization
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
 
-            try:
-                #cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-                if cur.rowcount < 1:
-                    return False
-                else:
-                    return True
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
+        # Check if message exists
+        cur.execute('SELECT * from messages WHERE message_id = %s' % messageid)
+        row = cur.fetchone()
+        if row is None:
+            return False
 
-        return False
+        cur.execute('DELETE FROM messages WHERE message_id = %s' % messageid)
 
-    def modify_message(self, messageid, title, body, editor="Anonymous"):
+        if cur.rowcount < 1:
+            return False
+        else:
+            self.con.commit()
+            return True
+
+    def create_room(room):
         '''
-        Modify the title, the body and the editor of the message with id
-        ``messageid``
+        Creates a room to the database.
 
-        :param str messageid: The id of the message to remove. Note that
-            messageid is a string with format msg-\d{1,3}
-        :param str title: the message's title
-        :param str body: the message's content
-        :param str editor: default 'Anonymous'. The nickname of the person
-            who is editing this message. If it is not provided "Anonymous"
-            will be stored in db.
-        :return: the id of the edited message or None if the message was
-              not found. The id of the message has the format ``msg-\d{1,3}``,
-              where \d{1,3} is the id of the message in the database.
-        :raises ValueError: if the messageid has a wrong format.
-
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the
+            database
         '''
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'msg-(\d{1,3})', messageid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        messageid = int(match.group(1))
-        '''
-        TASK5 TODO:
-        * Finish this method
-        HINTS:
-        * Remember that to modify the value of a row you have to use the UPDATE
-         sql command
-        * You have to modify just the title, the body and the
-          editor_nickname of the message
-        * You can check if a database has been modifed after an UPDATE using
-          the attribute cur.rowcount. If rowcount < 1, there has not been an
-          update.
-        * Remember to activate the foreign key support
-        HOW TO TEST: Use the database_api_tests_message. The following tests
-                     must pass without failure or error:
-                        * test_modify_message
-                        * test_modify_message_malformed_id
-                        * test_modify_message_noexisting_id
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'UPDATE messages SET title = %s, body = %s, editor_nickname = %s \
-        WHERE messageid = %s;' % (title, body, editor_nickname, messageid)
 
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-                if cur.rowcount < 1:
-                    return False
-                else:
-                    return True
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-
-        return False
 
     def create_message(self, title, body, sender="Anonymous",
                        ipaddress="0.0.0.0", replyto=None):
@@ -758,140 +437,45 @@ class Connection(object):
             if match is None:
                 raise ValueError("The replyto is malformed")
             replyto = int(match.group(1))
-        '''
-        TASK5 TODO:
-        * Finish this method
-        HINTS
-        * Remember that add a new row you must use the INSERT command.
-         sql command
-        * You have to add the following fields in the INSERT command:
-            - title -> passed as argument
-            - body -> passed as argument
-            - timestamp -> Use the expression:
-                           time.mktime(datetime.now().timetuple()) to get
-                           current timestamp.
-            - ip -> passed as argument ipaddres
-            - timesviewed -> Use the int 0.
-            - reply_to -> passed as argument replyto. It is recommended
-                          that you check that the message exists.
-                          Otherwise, return None.
-                          To check if the message exists check the messages
-                          table using the following SQL Query:
-                          'SELECT * from messages WHERE message_id = ?'
-            - user_nickname -> passed as sender argument
-            - user_id -> You must find the user_id accessing the users table.
-                         Use the following statement:
-                         'SELECT user_id from users WHERE nickname = ?'
-        * You can extract the id of the new row using lastrowid property
-          in cursor
-        * Be sure that you commit the current transaction
-        * Remember to activate the foreign key support
-        * HOW TO TEST: Use the database_api_tests_message. The following tests
-                       must pass without failure or error:
-                * test_create_message
-                * test_append_answer
-                * test_append_answer_malformed_id
-                * test_append_answer_noexistingid
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'INSERT INTO messages \
-        [(title, body, timestamp, ip, timesviewed, reply_to, user_nickname, user_id)] \
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) \
-        WHERE messageid = %s;' % (title, body, time.mktime(datetime.now().timetuple()), editor_nickname, messageid)
 
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
+        self.set_foreign_keys_support()
 
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-                if cur.rowcount < 1:
-                    return False
-                else:
-                    return True
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
+        # row initialization
+        self.con.row_factory = sqlite3.Row
 
-        return False
+        cur = self.con.cursor()
 
-        return None
+        # fetch user_id if the sender nickname not "Anomynous"
+        if sender == "Anonymous":
+            user_id = None
+        else:
+            cur.execute('SELECT user_id from users WHERE nickname = "%s"' % sender)
 
-    def append_answer(self, replyto, title, body, sender="Anonymous",
-                      ipaddress="0.0.0.0"):
-        '''
-        Same as :py:meth:`create_message`. The ``replyto`` parameter is not
-        a keyword argument, though.
+            row = cur.fetchone()
+            if row is None:
+               user_id = None
+            else:
+                user_id = row["user_id"]
 
-        :param str replyto: Only provided if this message is an answer to a
-            previous message (parent). Otherwise, Null will be stored in the
-            database. The id of the message has the format msg-\d{1,3}
-        :param str title: the message's title
-        :param str body: the message's content
-        :param str sender: the nickname of the person who is editing this
-            message. If it is not provided "Anonymous" will be stored in db.
-        :param str ipaddress: The ip address from which the message was created.
-            It is a string with format "xxx.xxx.xxx.xxx". If no ipaddress is
-            provided then database will store "0.0.0.0"
+        # Check if message exists
+        if replyto is not None:
+            cur.execute('SELECT * from messages WHERE message_id = %s' % replyto)
+            row = cur.fetchone()
+            if row is None:
+                return None
 
-        :return: the id of the created message or None if the message was
-            not found. Note that it is a string with the format msg-\d{1,3}.
+        # make a query to messages table to get the last id
+        params = (title, body, time.mktime(datetime.now().timetuple()), ipaddress, 0, replyto, sender, user_id)
+        stmnt = 'INSERT INTO messages (title, body, timestamp, ip, timesviewed, reply_to, user_nickname, user_id) \
+                VALUES (?,?,?,?,?,?,?,?)'
 
-        :raises ForumDatabaseError: if the database could not be modified.
-        :raises ValueError: if the replyto has a wrong format.
+        cur.execute(stmnt, params)
+        message_id = cur.lastrowid
+        self.con.commit()
 
-        '''
-        return self.create_message(title, body, sender, ipaddress, replyto)
+        return 'msg-' + str(message_id)
 
     #MESSAGE UTILS
-    def get_sender(self, messageid):
-        '''
-        Get the information of the user who sent a message which id is
-        ``messageid``
-
-        :param str messageid: Id of the message to search. Note that messageid
-            is a string with the format msg-\d{1,3}.
-
-        :return: a dictionary with the following format:
-
-            .. code-block:: javascript
-
-                {'public_profile':{'registrationdate':,'nickname':'',
-                                   'signature':'','avatar':''},
-                'restricted_profile':{'firstname':'','lastname':'','email':'',
-                                      'website':'','mobile':'','skype':'',
-                                      'age':'','residence':'','gender':'',
-                                      'picture':''}
-                }
-
-            where:
-
-            * ``registrationdate``: UNIX timestamp when the user registered in
-                                 the system (long integer)
-            * ``nickname``: nickname of the user
-            * ``signature``: text chosen by the user for signature
-            * ``avatar``: name of the image file used as avatar
-            * ``firstanme``: given name of the user
-            * ``lastname``: family name of the user
-            * ``email``: current email of the user.
-            * ``website``: url with the user's personal page. Can be None
-            * ``mobile``: string showing the user's phone number. Can be None.
-            * ``skype``: user's nickname in skype. Can be None.
-            * ``residence``: complete user's home address.
-            * ``picture``: file which contains an image of the user.
-            * ``gender``: User's gender ('male' or 'female').
-            * ``age``: integer containing the age of the user.
-
-            Note that all values are string if they are not otherwise indicated.
-            In the case that it is an unregistered user the dictionary just
-            contains the key ``nickname``;
-
-        '''
-        raise NotImplementedError("")
 
     def contains_message(self, messageid):
         '''
@@ -904,17 +488,6 @@ class Connection(object):
         '''
         return self.get_message(messageid) is not None
 
-    def get_message_time(self, messageid):
-        '''
-        Get the time when the message was sent.
-
-        :param str messageid: Id of the message to search. Note that messageid
-            is a string with the format msg-\d{1,3}.
-        :return: message time as a string or None if that message does not
-            exist.
-        :raises ValueError: if messageId is not well formed
-        '''
-        raise NotImplementedError("")
 
     #ACCESSING THE USER and USER_PROFILE tables
     def get_users(self):
@@ -1216,16 +789,8 @@ class Connection(object):
             return None
 
     # UTILS
-    def get_friends(self, nickname):
-        '''
-        Get a list with friends of a user.
 
-        :param str nickname: nickname of the target user
-        :return: a list of users nicknames or None if ``nickname`` is not in the
-            database
-        '''
-        raise NotImplementedError("")
-
+    # don't have
     def get_user_id(self, nickname):
         '''
         Get the key of the database row which contains the user with the given
@@ -1254,7 +819,21 @@ class Connection(object):
                 * test_get_user_id_unknown_user
         '''
 
-        return None
+        self.set_foreign_keys_support()
+
+        query = 'SELECT * FROM users WHERE nickname = ?'
+
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        pvalue = (nickname,)
+        cur.execute(query, pvalue)
+
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        return row['user_id']
 
     def contains_user(self, nickname):
         '''

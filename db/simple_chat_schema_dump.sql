@@ -6,8 +6,8 @@
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
 
--- Table: massages
-CREATE TABLE massages (
+-- Table: messages
+CREATE TABLE messages (
     id      BIGINT   PRIMARY KEY,
     room_id BIGINT   REFERENCES room (id) ON DELETE CASCADE
                                           ON UPDATE CASCADE,
