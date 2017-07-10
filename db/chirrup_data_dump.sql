@@ -7,18 +7,18 @@ PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
 
 -- Table: messages
-INSERT INTO messages (id, room_id, user_id, content, created) VALUES (2, 1, 3, 'Hello', '2107-07-07 16:45:00');
-INSERT INTO messages (id, room_id, user_id, content, created) VALUES (1, 1, 2, 'Hi', '2107-07-07 16:45:00');
+INSERT INTO messages (message_id, room_id, user_id, content, created) VALUES (2, 1, 3, 'Hello', '2107-07-07 16:45:00');
+INSERT INTO messages (message_id, room_id, user_id, content, created) VALUES (1, 1, 2, 'Hi', '2107-07-07 16:45:00');
 
 -- Table: room
-INSERT INTO room (id, name, type, user_id, created, updated) VALUES (1, 'room1', 'PRIVATE', 2, '2107-07-07 16:45:00', NULL);
+INSERT INTO room (room_id, name, type, user_id, created, updated) VALUES (1, 'room1', 'PRIVATE', 2, '2107-07-07 16:45:00', NULL);
 
 -- Table: room_members
 INSERT INTO room_members (id, room_id, user_id, created, updated) VALUES (2, 1, 3, '2107-07-07 16:45:00', NULL);
 INSERT INTO room_members (id, room_id, user_id, created, updated) VALUES (1, 1, 2, '2107-07-07 16:45:00', NULL);
 
 -- Table: token
-INSERT INTO token (id, user_id, token, status, created, updated) VALUES (1, 2, 'assdfghjklwertyuiop', 'ACTIVE', '2107-07-07 16:45:00', NULL);
+INSERT INTO token (token_id, user_id, token, status, created, updated) VALUES (1, 2, 'assdfghjklwertyuiop', 'ACTIVE', '2107-07-07 16:45:00', NULL);
 
 
 -- Table: user
