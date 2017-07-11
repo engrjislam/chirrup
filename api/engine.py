@@ -10,8 +10,8 @@ Provides the database API to access the forum persistent data.
 @author: ivan
 '''
 
-from datetime import datetime
-import time, sqlite3, re, os, connections
+import sqlite3, os, connections
+
 #Default paths for .db and .sql files to create and populate the database.
 DEFAULT_DB_PATH = 'db/chirrup.db'
 DEFAULT_SCHEMA = "db/chirrup_schema_dump.sql"
@@ -73,14 +73,13 @@ class Engine(object):
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
-        #THIS KEEPS THE SCHEMA AND REMOVE VALUES
         con = sqlite3.connect(self.db_path)
         #Activate foreing keys support
         cur = con.cursor()
         cur.execute(keys_on)
         with con:
             cur = con.cursor()
-            cur.execute("DELETE FROM messages")
+            cur.execute("DELETE FROM user")
             cur.execute("DELETE FROM users")
             #NOTE since we have ON DELETE CASCADE BOTH IN users_profile AND
             #friends, WE DO NOT HAVE TO WORRY TO CLEAR THOSE TABLES.
@@ -125,69 +124,3 @@ class Engine(object):
             sql = f.read()
             cur = con.cursor()
             cur.executescript(sql)
-
-    #METHODS TO CREATE THE TABLES PROGRAMMATICALLY WITHOUT USING SQL SCRIPT
-    def create_messages_table(self):
-        '''
-        Create the table ``messages`` programmatically, without using .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE messages(message_id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    title TEXT, body TEXT, timestamp INTEGER, \
-                    ip TEXT, timesviewed INTEGER, \
-                    reply_to INTEGER, \
-                    user_nickname TEXT, user_id INTEGER, \
-                    editor_nickname TEXT, \
-                    FOREIGN KEY(reply_to) REFERENCES messages(message_id) \
-                    ON DELETE CASCADE, \
-                    FOREIGN KEY(user_id,user_nickname) \
-                    REFERENCES users(user_id, nickname) ON DELETE SET NULL)'
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-                return False
-        return True
-
-    def create_users_table(self):
-        '''
-        Create the table ``users`` programmatically, without using .sql file.
-
-        Print an error message in the console if it could not be created.
-
-        :return: ``True`` if the table was successfully created or ``False``
-            otherwise.
-
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE users(user_id INTEGER PRIMARY KEY AUTOINCREMENT,\
-                                    nickname TEXT UNIQUE, regDate INTEGER,\
-                                    lastLogin INTEGER, timesviewed INTEGER,\
-                                    UNIQUE(user_id, nickname))'
-        #Connects to the database. Gets a connection object
-        con = sqlite3.connect(self.db_path)
-        with con:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
-            cur = con.cursor()
-            try:
-                cur.execute(keys_on)
-                #execute the statement
-                cur.execute(stmnt)
-            except sqlite3.Error, excp:
-                print "Error %s:" % excp.args[0]
-                return False
-        return True

@@ -20,7 +20,7 @@ CREATE TABLE messages (
 
 
 -- Table: room
-CREATE TABLE room (
+CREATE TABLE rooms (
     room_id BIGINT       PRIMARY KEY,
     name    VARCHAR (64) UNIQUE
                          NOT NULL,
@@ -47,22 +47,23 @@ CREATE TABLE room_users (
 
 
 -- Table: token
-CREATE TABLE token (
-    user_id  BIGINT        REFERENCES user (user_id) ON DELETE RESTRICT
-                                                     ON UPDATE CASCADE,
-    token    VARCHAR (128) NOT NULL
-                           UNIQUE,
-    status   VARCHAR (8)   NOT NULL,
-    created  DATETIME      NOT NULL,
-    updated  DATETIME,
-    PRIMARY KEY(user_id)
+CREATE TABLE tokens (
+    id      BIGINT        PRIMARY KEY,
+    user_id BIGINT        REFERENCES user (id) ON DELETE RESTRICT
+                                               ON UPDATE CASCADE,
+    token   VARCHAR (128) NOT NULL
+                          UNIQUE,
+    status  VARCHAR (8)   NOT NULL,
+    created DATETIME      NOT NULL,
+    updated DATETIME
 );
 
 
 -- Table: user
-CREATE TABLE user (
+CREATE TABLE users (
     user_id  BIGINT        PRIMARY KEY,
-    username VARCHAR (128) NOT NULL,
+    username VARCHAR (128) UNIQUE
+                           NOT NULL,
     password VARCHAR (64)  NOT NULL,
     email    VARCHAR (64)  UNIQUE
                            NOT NULL,
@@ -71,7 +72,7 @@ CREATE TABLE user (
     updated  DATETIME
 );
 
-CREATE TABLE user_profile (
+CREATE TABLE users_profile (
     user_id  BIGINT        REFERENCES user (user_id) ON DELETE CASCADE
                                                      ON UPDATE CASCADE,
     nickname VARCHAR (64)  UNIQUE

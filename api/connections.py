@@ -1,11 +1,7 @@
 # course exercise1 database.py used as a template
 
 from datetime import datetime
-import time, sqlite3, re
-#Default paths for .db and .sql files to create and populate the database.
-DEFAULT_DB_PATH = 'db/chirrup.db'
-DEFAULT_SCHEMA = "db/chirrup_schema_dump.sql"
-DEFAULT_DATA_DUMP = "db/chirrup_data_dump.sql"
+import time, sqlite3
 
 
 class Connection(object):
@@ -115,51 +111,28 @@ class Connection(object):
         :type row: sqlite3.Row
         :return: a dictionary containing the following keys:
 
-            * ``messageid``: id of the message (int)
-            * ``title``: message's title
-            * ``body``: message's text
-            * ``timestamp``: UNIX timestamp (long integer) that specifies when
+            * ``message_id``: id of the message . Note that messageid is a
+            string with format ``msg-\d{1,3}``.
+            * ``room_id``: The room where the message was sent to.
+            * ``user_id``: The user who sent the message
+            * ``content``: message's text
+            * ``created``: UNIX timestamp (long integer) that specifies when
               the message was created.
-            * ``replyto``: The id of the parent message. String with the format
-              msg-{id}. Its value can be None.
-            * ``sender``: The nickname of the message's creator.
-            * ``editor``: The nickname of the message's editor.
+
 
             Note that all values in the returned dictionary are string unless
             otherwise stated.
 
         '''
         message_id = 'msg-' + str(row['message_id'])
-        message_replyto = 'msg-' + str(row['reply_to']) \
-            if row['reply_to'] is not None else None
-        message_sender = row['user_nickname']
-        message_editor = row['editor_nickname']
-        message_title = row['title']
-        message_body = row['body']
-        message_timestamp = row['timestamp']
-        message = {'messageid': message_id, 'title': message_title,
-                   'timestamp': message_timestamp, 'replyto': message_replyto,
-                   'body': message_body, 'sender': message_sender,
-                   'editor': message_editor}
-        return message
+        message_room_id = row['room_id']
+        message_user_id = row['user_id']
+        message_created = row['created']
+        message_content = row['content']
 
-    def _create_message_list_object(self, row):
-        '''
-        Same as :py:meth:`_create_message_object`. However, the resulting
-        dictionary is targeted to build messages in a list.
-
-        :param row: The row obtained from the database.
-        :type row: sqlite3.Row
-        :return: a dictionary with the keys ``messageid``, ``title``,
-            ``timestamp`` and ``sender``.
-
-        '''
-        message_id = 'msg-' + str(row['message_id'])
-        message_sender = row['user_nickname']
-        message_title = row['title']
-        message_timestamp = row['timestamp']
-        message = {'messageid': message_id, 'title': message_title,
-                   'timestamp': message_timestamp, 'sender': message_sender}
+        message = {'message_id': message_id, 'room_id': message_room_id,
+                   'user_id': message_user_id, 'created': message_created,
+                   'content': message_content}
         return message
 
     #Helpers for users
@@ -234,32 +207,26 @@ class Connection(object):
 
     #API ITSELF
     #Message Table API.
-    def get_message(self, messageid):
+    def get_message(self, message_id):
         '''
         Extracts a message from the database.
 
-        :param messageid: The id of the message. Note that messageid is a
-            string with format ``msg-\d{1,3}``.
+        :param message_id: The id of the message.
+        :type message_id: int
         :return: A dictionary with the format provided in
             :py:meth:`_create_message_object` or None if the message with target
             id does not exist.
-        :raises ValueError: when ``messageid`` is not well formed
-
         '''
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'msg-(\d{1,3})', messageid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        messageid = int(match.group(1))
-        #Activate foreign key support
+
+        # Init
         self.set_foreign_keys_support()
-        #Create the SQL Query
-        query = 'SELECT * FROM messages WHERE message_id = ?'
-        #Cursor and row initialization
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        #Execute main SQL Statement
-        pvalue = (messageid,)
+
+        query = 'SELECT * FROM messages WHERE message_id = ?'
+
+        # Execute the query
+        pvalue = (message_id,)
         cur.execute(query, pvalue)
         #Process the response.
         #Just one row is expected
@@ -267,18 +234,17 @@ class Connection(object):
         if row is None:
             return None
         #Build the return object
+        print('row in get_message(): ', row)
         return self._create_message_object(row)
 
-    def get_messages(self, nickname=None, number_of_messages=-1,
+    def get_messages(self, room_id, number_of_messages=-1,
                      before=-1, after=-1):
         '''
         Return a list of all the messages in the database filtered by the
         conditions provided in the parameters.
 
-        :param nickname: default None. Search messages of a user with the given
-            nickname. If this parameter is None, it returns the messages of
-            any user in the system.
-        :type nickname: str
+        :param room_id:  Search messages filtering with room_id.
+        :type room_id: int
         :param number_of_messages: default -1. Sets the maximum number of
             messages returning in the list. If set to -1, there is no limit.
         :type number_of_messages: int
@@ -292,48 +258,62 @@ class Connection(object):
         :return: A list of messages. Each message is a dictionary containing
             the following keys:
 
-            * ``messageid``: string with the format msg-\d{1,3}.Id of the
-                message.
-            * ``sender``: nickname of the message's author.
-            * ``title``: string containing the title of the message.
-            * ``timestamp``: UNIX timestamp (long int) that specifies when the
+            * ``message_id``: int
+            * ``room_id``: room_id where the message was sent to.
+            * ``user_id``: user_id of the message's author.
+            * ``content``: string containing the title of the message.
+            * ``created``: UNIX timestamp (long int) that specifies when the
                 message was created.
 
             Note that all values in the returned dictionary are string unless
             otherwise stated.
 
+            None is returned if the room_id doesn't exist.
+
         :raises ValueError: if ``before`` or ``after`` are not valid UNIX
-            timestamps
+            timestamps or ``before`` > ``after`` or arguments type is not int.
 
         '''
-        #Create the SQL Statement build the string depending on the existence
-        #of nickname, numbero_of_messages, before and after arguments.
-        query = 'SELECT * FROM messages'
-          #Nickname restriction
-        if nickname is not None or before != -1 or after != -1:
-            query += ' WHERE'
-        if nickname is not None:
-            query += " user_nickname = '%s'" % nickname
-          #Before restriction
-        if before != -1:
-            if nickname is not None:
-                query += ' AND'
-            query += " timestamp < %s" % str(before)
-          #After restriction
-        if after != -1:
-            if nickname is not None or before != -1:
-                query += ' AND'
-            query += " timestamp > %s" % str(after)
-          #Order of results
-        query += ' ORDER BY timestamp DESC'
-          #Limit the number of resulst return
-        if number_of_messages > -1:
-            query += ' LIMIT ' + str(number_of_messages)
-        #Activate foreign key support
+
+        # Check variables
+        if type(number_of_messages) or type(before) or type(after) is not int:
+            raise ValueError
+
+        if after > before:
+            raise ValueError
+
+        # Initialization
         self.set_foreign_keys_support()
-        #Cursor and row initialization
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
+
+        # Check if message exists
+        cur.execute('SELECT * from messages WHERE message_id = %s' % str(room_id))
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        # Create the SQL Statement build the string depending on the existence
+        # of room_id, numbero_of_messages, before and after arguments.
+        query = 'SELECT * FROM messages WHERE room_id=%s' % str(room_id)
+
+        #Before restriction
+        if before != -1:
+            query += ' AND'
+            query += " created < %s" % str(before)
+        #After restriction
+        if after != -1:
+            if before != -1:
+                query += ' AND'
+            query += " created > %s" % str(after)
+
+        #Order of results
+        query += ' ORDER BY timestamp DESC'
+
+        #Limit the number of resulst return
+        if number_of_messages > -1:
+            query += ' LIMIT ' + str(number_of_messages)
+
         #Execute main SQL Statement
         cur.execute(query)
         #Get results
@@ -343,25 +323,20 @@ class Connection(object):
         #Build the return object
         messages = []
         for row in rows:
-            message = self._create_message_list_object(row)
+            message = self._create_message_object(row)
             messages.append(message)
         return messages
 
-    def delete_message(self, messageid):
+
+    def delete_message(self, message_id):
         '''
         Delete the message with id given as parameter.
 
-        :param str messageid: id of the message to remove.Note that messageid
-            is a string with format ``msg-\d{1,3}``
+        :param str message:id: id of the message to remove.
+        :type message_id: int
         :return: True if the message has been deleted, False otherwise
-        :raises ValueError: if the messageId has a wrong format.
-
         '''
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'msg-(\d{1,3})', messageid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        messageid = int(match.group(1))
+
         '''
         #TASK5 TODO:#
         * Implement this method.
@@ -385,12 +360,12 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if message exists
-        cur.execute('SELECT * from messages WHERE message_id = %s' % messageid)
+        cur.execute('SELECT * from messages WHERE message_id = %s' % message_id)
         row = cur.fetchone()
         if row is None:
             return False
 
-        cur.execute('DELETE FROM messages WHERE message_id = %s' % messageid)
+        cur.execute('DELETE FROM messages WHERE message_id = %s' % message_id)
 
         if cur.rowcount < 1:
             return False
@@ -398,45 +373,22 @@ class Connection(object):
             self.con.commit()
             return True
 
-    def create_room(room):
-        '''
-        Creates a room to the database.
 
-        :param str nickname: nickname of the target user
-        :return: a list of users nicknames or None if ``nickname`` is not in the
-            database
-        '''
-
-
-    def create_message(self, title, body, sender="Anonymous",
-                       ipaddress="0.0.0.0", replyto=None):
+    def create_message(self, room_id, content, user_id):
         '''
         Create a new message with the data provided as arguments.
 
-        :param str title: the message's title
-        :param str body: the message's content
-        :param str sender: the nickname of the person who is editing this
-            message. If it is not provided "Anonymous" will be stored in db.
-        :param str ipaddress: The ip address from which the message was created.
-            It is a string with format "xxx.xxx.xxx.xxx". If no ipaddress is
-            provided then database will store "0.0.0.0"
-        :param str replyto: Only provided if this message is an answer to a
-            previous message (parent). Otherwise, Null will be stored in the
-            database. The id of the message has the format msg-\d{1,3}
+        :param int room_id: the room where the message was sent to
+        :param str content: the message's content
+        :param str user_id: the user_id of the person who is editing this
+            message.
 
         :return: the id of the created message or None if the message was
             not found. Note that it is a string with the format msg-\d{1,3}.
 
-        :raises ForumDatabaseError: if the database could not be modified.
-        :raises ValueError: if the replyto has a wrong format.
+        :raises ChirrupDatabaseError: if the database could not be modified.
 
         '''
-        #Extracts the int which is the id for a message in the database
-        if replyto is not None:
-            match = re.match('msg-(\d{1,3})', replyto)
-            if match is None:
-                raise ValueError("The replyto is malformed")
-            replyto = int(match.group(1))
 
         self.set_foreign_keys_support()
 
@@ -445,29 +397,10 @@ class Connection(object):
 
         cur = self.con.cursor()
 
-        # fetch user_id if the sender nickname not "Anomynous"
-        if sender == "Anonymous":
-            user_id = None
-        else:
-            cur.execute('SELECT user_id from users WHERE nickname = "%s"' % sender)
-
-            row = cur.fetchone()
-            if row is None:
-               user_id = None
-            else:
-                user_id = row["user_id"]
-
-        # Check if message exists
-        if replyto is not None:
-            cur.execute('SELECT * from messages WHERE message_id = %s' % replyto)
-            row = cur.fetchone()
-            if row is None:
-                return None
-
         # make a query to messages table to get the last id
-        params = (title, body, time.mktime(datetime.now().timetuple()), ipaddress, 0, replyto, sender, user_id)
-        stmnt = 'INSERT INTO messages (title, body, timestamp, ip, timesviewed, reply_to, user_nickname, user_id) \
-                VALUES (?,?,?,?,?,?,?,?)'
+        params = (room_id, user_id, content, time.mktime(datetime.now().timetuple()))
+        stmnt = 'INSERT INTO messages (room_id, user_id, content, created) \
+                VALUES (?,?,?,?)'
 
         cur.execute(stmnt, params)
         message_id = cur.lastrowid
@@ -477,7 +410,7 @@ class Connection(object):
 
     #MESSAGE UTILS
 
-    def contains_message(self, messageid):
+    def contains_message(self, message_id):
         '''
         Checks if a message is in the database.
 
@@ -486,7 +419,7 @@ class Connection(object):
         :return: True if the message is in the database. False otherwise.
 
         '''
-        return self.get_message(messageid) is not None
+        return self.get_message(message_id) is not None
 
 
     #ACCESSING THE USER and USER_PROFILE tables
@@ -788,6 +721,14 @@ class Connection(object):
         else:
             return None
 
+    # Room related functionality
+    def create_room(self, room):
+        '''
+        Creates a room to the database.
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the
+            database
+        '''
     # UTILS
 
     # don't have
