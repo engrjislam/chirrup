@@ -25,8 +25,8 @@ CREATE TABLE room (
     name    VARCHAR (64) UNIQUE
                          NOT NULL,
     type    VARCHAR (8)  NOT NULL,
-    user_id BIGINT       NOT NULL
-                         REFERENCES user (user_id) ON DELETE CASCADE
+    admin   BIGINT       NOT NULL
+                         REFERENCES user (user_id) ON DELETE RESTRICT  -- user can't remove the account if admin in a room
                                                    ON UPDATE CASCADE,
     status VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
     created INTEGER     NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE user (
     email    VARCHAR (64)  UNIQUE
                            NOT NULL,
     status   VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
-    created  INTEGER    NOT NULL,
+    created  INTEGER       NOT NULL,
     updated  INTEGER
 );
 

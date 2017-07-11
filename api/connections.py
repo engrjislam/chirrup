@@ -115,14 +115,12 @@ class Connection(object):
         :type row: sqlite3.Row
         :return: a dictionary containing the following keys:
 
-            * ``message_id``: id of the message . Note that messageid is a
-            string with format ``msg-\d{1,3}``.
+            * ``message_id``: id of the message.``.
             * ``room_id``: The room where the message was sent to.
             * ``user_id``: The user who sent the message
             * ``content``: message's text
             * ``created``: UNIX timestamp (long integer) that specifies when
               the message was created.
-
 
             Note that all values in the returned dictionary are string unless
             otherwise stated.
@@ -151,54 +149,40 @@ class Connection(object):
 
             .. code-block:: javascript
 
-                {'public_profile':{'registrationdate':,'nickname':'',
-                                   'signature':'','avatar':''},
-                'restricted_profile':{'firstname':'','lastname':'','email':'',
-                                      'website':'','mobile':'','skype':'',
-                                      'age':'','residence':'','gender':'',
-                                      'picture':''}
+                {'public_profile':{'nickname':,'image':''},
+                'restricted_profile':{'username':'','password':'','email':'',
+                                      'status':'','created':'','updated':''}
                 }
 
             where:
 
-            * ``registrationdate``: UNIX timestamp when the user registered in
-                                 the system (long integer)
             * ``nickname``: nickname of the user
-            * ``signature``: text chosen by the user for signature
-            * ``avatar``: name of the image file used as avatar
-            * ``firstanme``: given name of the user
-            * ``lastname``: family name of the user
-            * ``email``: current email of the user.
-            * ``website``: url with the user's personal page. Can be None
-            * ``mobile``: string showing the user's phone number. Can be None.
-            * ``skype``: user's nickname in skype. Can be None.
-            * ``residence``: complete user's home address.
-            * ``picture``: file which contains an image of the user.
-            * ``gender``: User's gender ('male' or 'female').
-            * ``age``: integer containing the age of the user.
+            * ``image``: name of the image file
+
+            * ``username``: used for login
+            * ``password``: used for login
+            * ``email``: current email of the user, login and user contact purposes
+            * ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
+            * ``created``: when the user account was created, UNIX timestamp when the user registered in the system (long integer)
+            * ``updated``: when the user account was modified, UNIX timestamp when the user registered in the system (long integer)
 
             Note that all values are string if they are not otherwise indicated.
 
         '''
-        reg_date = row['regDate']
-        return {'public_profile': {'registrationdate': reg_date,
-                                   'nickname': row['nickname'],
-                                   'signature': row['signature'],
-                                   'avatar': row['avatar']},
-                'restricted_profile': {'firstname': row['firstname'],
-                                       'lastname': row['lastname'],
-                                       'email': row['email'],
-                                       'website': row['website'],
-                                       'mobile': row['mobile'],
-                                       'skype': row['skype'],
-                                       'age': row['age'],
-                                       'residence': row['residence'],
-                                       'gender': row['gender'],
-                                       'picture': row['picture']}
+        return {'public_profile': {'nickname': str(row['nickname']),
+                                   'image': str(row['image'])},
+                'restricted_profile': {'username': str(row['username']),
+                                       'password': str(row['password']),
+                                       'email': str(row['email']),
+                                       'status': str(row['status']),
+                                       'created': str(row['created']),
+                                       'updated': str(row['updated'])}
                 }
 
+    # lighter version of user object, probably not needed
+    '''
     def _create_user_list_object(self, row):
-        '''
+        
         Same as :py:meth:`_create_message_object`. However, the resulting
         dictionary is targeted to build messages in a list.
 
@@ -207,8 +191,36 @@ class Connection(object):
         :return: a dictionary with the keys ``registrationdate`` and
             ``nickname``
 
-        '''
+        
         return {'registrationdate': row['regDate'], 'nickname': row['nickname']}
+    '''
+
+    def _create_room_object(self, row):
+        '''
+        It takes a database Row and transform it into a python dictionary.
+
+        :param row: The row obtained from the database.
+        :type row: sqlite3.Row
+        :return: a dictionary with the following keys:
+
+            * ``name``: name of the room
+            * ``type``: "PRIVATE" or "PUBLIC"
+            * ``admin``: user_id of the user with admin privileges, initially given for the user who creates the room
+            * ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
+            * ``created``: when the room was created, UNIX timestamp (long integer)
+            * ``updated``: when the room information(name, type, admin, status) was modified, UNIX timestamp (long integer)
+
+            Note that all values are string if they are not otherwise indicated.
+
+        '''
+        return {
+            'name': str(row['name']),
+            'type': str(row['type']),
+            'admin': str(row['admin']),
+            'status': str(row['status']),
+            'created': str(row['created']),
+            'updated': str(row['updated'])
+        }
 
     #API ITSELF
     #Message Table API.
@@ -352,24 +364,7 @@ class Connection(object):
         :type message_id: int
         :return: True if the message has been deleted, False otherwise
         :raise: ValueError if message_id not correct format
-        '''
 
-        '''
-        #TASK5 TODO:#
-        * Implement this method.
-        * HINTS:
-           * To remove a message use the DELETE sql command
-           * To check if the message has been previously deleted you can check
-             the size of the rows returned in the cursor. You can check it from
-             the attribute cursor.rowcount. If the rowcount is < 1 means that
-             no row has been  deleted and hence you should return False.
-             Otherwise return True.
-           * Be sure that you commit the current transaction
-        * HOW TO TEST: Use the database_api_tests_message. The following tests
-          must pass without failure or error:
-            * test_delete_message
-            * test_delete_message_malformed_id
-            * test_delete_message_noexisting_id
         '''
         # Check that id correct format
         try:
@@ -462,16 +457,12 @@ class Connection(object):
         '''
         Extracts all users in the database.
 
-        :return: list of Users of the database. Each user is a dictionary
-            that contains two keys: ``nickname``(str) and ``registrationdate``
-            (long representing UNIX timestamp). None is returned if the database
-            has no users.
-
+        :return: list of Users-object of the database.  None is returned if the database has no users.
         '''
         #Create the SQL Statements
           #SQL Statement for retrieving the users
-        query = 'SELECT users.*, users_profile.* FROM users, users_profile \
-                 WHERE users.user_id = users_profile.user_id'
+        query = 'SELECT user.*, user_profile.* FROM user, user_profile \
+                 WHERE user.user_id = user_profile.user_id'
         #Activate foreign key support
         self.set_foreign_keys_support()
         #Create the cursor
@@ -486,131 +477,133 @@ class Connection(object):
         #Process the response.
         users = []
         for row in rows:
-            users.append(self._create_user_list_object(row))
+            users.append(self._create_user_object(row))
         return users
 
-    def get_user(self, nickname):
+    def get_user(self, user_id):
         '''
         Extracts all the information of a user.
 
-        :param str nickname: The nickname of the user to search for.
+        :param int user_id:
         :return: dictionary with the format provided in the method:
-            :py:meth:`_create_user_object`
+            :py:meth:`_create_user_object` or None if the user doesn't exist
+        :raise ValueError if user_id not valid
 
         '''
-        #Create the SQL Statements
-          #SQL Statement for retrieving the user given a nickname
-        query1 = 'SELECT user_id from users WHERE nickname = ?'
-          #SQL Statement for retrieving the user information
-        query2 = 'SELECT users.*, users_profile.* FROM users, users_profile \
-                  WHERE users.user_id = ? \
-                  AND users_profile.user_id = users.user_id'
-          #Variable to be used in the second query.
-        user_id = None
-        #Activate foreign key support
+
+        # check if user_id valid
+        try:
+            user_id = int(user_id)
+        except:
+            raise ValueError
+
+        # Init
         self.set_foreign_keys_support()
-        #Cursor and row initialization
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        #Execute SQL Statement to retrieve the id given a nickname
-        pvalue = (nickname,)
-        cur.execute(query1, pvalue)
-        #Extract the user id
+
+        # Check if user exists
+        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
         row = cur.fetchone()
         if row is None:
             return None
-        user_id = row["user_id"]
-        # Execute the SQL Statement to retrieve the user invformation.
-        # Create first the valuse
+
+        query = 'SELECT user.*, user_profile.* FROM users, user_profile \
+                          WHERE user.user_id = ? \
+                          AND user_profile.user_id = user.user_id'
+        # Create first the value
         pvalue = (user_id, )
-        #execute the statement
-        cur.execute(query2, pvalue)
+        cur.execute(query, pvalue)
         #Process the response. Only one posible row is expected.
         row = cur.fetchone()
         return self._create_user_object(row)
 
-    def delete_user(self, nickname):
+    def delete_user(self, user_id):
         '''
-        Remove all user information of the user with the nickname passed in as
-        argument.
+        Set ``status`` of the user to "INACTIVE". The information can be retrieved if the user wants it.
 
-        :param str nickname: The nickname of the user to remove.
+        :param int user_id: The user_id of the user to .
 
         :return: True if the user is deleted, False otherwise.
+        :raise: ValueError if user_id not valid
 
         '''
-        #Create the SQL Statements
-          #SQL Statement for deleting the user information
-        query = 'DELETE FROM users WHERE nickname = ?'
-        #Activate foreign key support
+
+        #TODO: if user admin in a room return False.
+
+        # check if user_id valid
+        try:
+            user_id = int(user_id)
+        except:
+            raise ValueError
+
+        # Init
         self.set_foreign_keys_support()
-        #Cursor and row initialization
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        #Execute the statement to delete
-        pvalue = (nickname,)
-        cur.execute(query, pvalue)
+
+        cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = %s' % user_id)
         self.con.commit()
+
         #Check that it has been deleted
         if cur.rowcount < 1:
             return False
         return True
 
-    def modify_user(self, nickname, user):
+    def modify_user(self, user_id, user):
         '''
         Modify the information of a user.
 
-        :param str nickname: The nickname of the user to modify
-        :param dict user: a dictionary with the information to be modified. The
-                dictionary has the following structure:
+        :param int user_id: The nickname of the user to modify
+        :param user: a dictionary with the following format:
 
-                .. code-block:: javascript
+            .. code-block:: javascript
 
-                    {'public_profile':{'registrationdate':,'signature':'',
-                                       'avatar':''},
-                    'restricted_profile':{'firstname':'','lastname':'',
-                                          'email':'', 'website':'','mobile':'',
-                                          'skype':'','age':'','residence':'',
-                                          'gender':'', 'picture':''}
-                    }
+                {'public_profile':{'nickname':,'image':''},
+                'restricted_profile':{'username':'','password':'','email':'',
+                                      'status':'','created':'','updated':''}
+                }
 
-                where:
+            where:
 
-                * ``registrationdate``: UNIX timestamp when the user registered
-                    in the system (long integer)
-                * ``signature``: text chosen by the user for signature
-                * ``avatar``: name of the image file used as avatar
-                * ``firstanme``: given name of the user
-                * ``lastname``: family name of the user
-                * ``email``: current email of the user.
-                * ``website``: url with the user's personal page. Can be None
-                * ``mobile``: string showing the user's phone number. Can be
-                    None.
-                * ``skype``: user's nickname in skype. Can be None.
-                * ``residence``: complete user's home address.
-                * ``picture``: file which contains an image of the user.
-                * ``gender``: User's gender ('male' or 'female').
-                * ``age``: integer containing the age of the user.
+            * ``nickname``: nickname of the user
+            * ``image``: name of the image file
+
+            * ``username``: used for login
+            * ``password``: used for login
+            * ``email``: current email of the user, login and user contact purposes
+            * ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
+            * ``created``: when the user account was created, UNIX timestamp when the user registered in the system (long integer)
+            * ``updated``: when the user account was modified, UNIX timestamp when the user registered in the system (long integer)
 
             Note that all values are string if they are not otherwise indicated.
 
-        :return: the nickname of the modified user or None if the
-            ``nickname`` passed as parameter is not  in the database.
+
+        :return: the user_id of the modified user or None if the
+            ``user_id`` passed as parameter is not in the database.
         :raise ValueError: if the user argument is not well formed.
 
         '''
-        #Create the SQL Statements
-        #SQL Statement for extracting the userid given a nickname
-        query1 = 'SELECT user_id from users WHERE nickname = ?'
-        #SQL Statement to update the user_profile table
-        query2 = 'UPDATE users_profile SET firstname = ?,lastname = ?, \
-                                           email = ?,website = ?, \
-                                           picture = ?,mobile = ?, \
-                                           skype = ?,age = ?,residence = ?, \
-                                           gender = ?,signature = ?,avatar = ?\
-                                           WHERE user_id = ?'
+        # check if user_id valid
+        try:
+            user_id = int(user_id)
+        except:
+            raise ValueError
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        # Check if user exists
+        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        query = 'UPDATE user_profile SET nickname = ?, image = ? WHERE user_id = ?'
+        '''
         #temporal variables
-        user_id = None
         p_profile = user['public_profile']
         r_profile = user['restricted_profile']
         _firstname = r_profile.get('firstname', None)
@@ -625,11 +618,7 @@ class Connection(object):
         _gender = r_profile.get('gender', None)
         _signature = p_profile.get('signature', None)
         _avatar = p_profile.get('avatar', None)
-        #Activate foreign key support
-        self.set_foreign_keys_support()
-        #Cursor and row initialization
-        self.con.row_factory = sqlite3.Row
-        cur = self.con.cursor()
+
         #Execute the statement to extract the id associated to a nickname
         pvalue = (nickname,)
         cur.execute(query1, pvalue)
@@ -650,6 +639,7 @@ class Connection(object):
             if cur.rowcount < 1:
                 return None
             return nickname
+    '''
 
     def append_user(self, nickname, user):
         '''
@@ -757,50 +747,153 @@ class Connection(object):
             return None
 
     # Room related functionality
-    def create_room(self, room):
+    def create_room(self, room_id):
         '''
         Creates a room to the database.
         :param str nickname: nickname of the target user
         :return: a list of users nicknames or None if ``nickname`` is not in the
             database
         '''
-    # UTILS
 
-    # don't have
+    def delete_room(self, room_id):
+        '''
+        Creates a room to the database.
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the
+            database
+        '''
+
+    def modify_room(self, room_id):
+        '''
+        Creates a room to the database.
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the
+            database
+        '''
+
+    def add_room_member(self, room_id, user_id):
+        '''
+        Creates a room to the database.
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the
+            database
+        '''
+
+    def remove_room_member(self, room_id, user_id):
+        '''
+        Creates a room to the database.
+        :param str nickname: nickname of the target user
+        :return: a list of users nicknames or None if ``nickname`` is not in the database
+        '''
+
+    def get_user_rooms(self, user_id):
+        '''
+        Gets all the rooms the user has currently joined.
+
+        :param int user_id: user_id of the target user
+        :return: a list of rooms or None if ``nickname`` is not in the database
+
+        '''
+
+    def get_rooms(self, keyword='', room_status='', number_of_rooms=-1, before=-1, after=-1):
+        # TODO find a good set of parameters for filtering the rooms
+        '''
+        Return a list of all the rooms in the database filtered by the
+        conditions provided in the parameters.
+
+        :param number_of_rooms: default -1. Sets the maximum number of
+            messages returning in the list. If set to -1, there is no limit.
+        :type number_of_rooms: int
+        :param before: All timestamps > ``before`` (UNIX timestamp) are removed.
+            If set to -1, this condition is not applied.
+        :type before: long
+        :param after: All timestamps < ``after`` (UNIX timestamp) are removed.
+            If set to -1, this condition is not applied.
+        :type after: long
+
+        :return: A list of messages. Each message is a dictionary containing
+            the following keys:
+
+            * ``message_id``: int
+            * ``room_id``: room_id where the message was sent to.
+            * ``user_id``: user_id of the message's author.
+            * ``content``: string containing the title of the message.
+            * ``created``: UNIX timestamp (long int) that specifies when the
+                message was created.
+
+            Note that all values in the returned dictionary are string unless
+            otherwise stated.
+
+            None is returned if the room_id doesn't exist.
+
+        :raises ValueError: if ``before`` or ``after`` are not valid UNIX
+            timestamps or ``before`` > ``after`` or arguments type is not int.
+
+        '''
+        # Check input parameters
+        if type(number_of_rooms) is not int or type(before) is not int or type(after) is not int:
+            raise ValueError
+
+        if after > before:
+            raise ValueError
+
+        # Initialization
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        # Create the SQL Statement build the string depending on the existence
+        # of room_id, numbero_of_messages, before and after arguments.
+        query = 'SELECT * FROM messages WHERE '
+
+        # Before restriction
+        if before != -1:
+            query += ' AND'
+            query += " created < %s" % str(before)
+        # After restriction
+        if after != -1:
+            if before != -1:
+                query += ' AND'
+            query += " created > %s" % str(after)
+
+        # Order of results
+        query += ' ORDER BY created DESC'
+
+        # Limit the number of resulst return
+        if number_of_rooms > -1:
+            query += ' LIMIT ' + str(number_of_rooms)
+
+        # Execute main SQL Statement
+        cur.execute(query)
+        # Get results
+        rows = cur.fetchall()
+        if rows is None:
+            return None
+        # Build the return object
+        messages = []
+        for row in rows:
+            message = self._create_message_object(row)
+            messages.append(message)
+        return messages
+
+    # UTILS
+    # do we need or is it gonna be username or maybe email?
     def get_user_id(self, nickname):
         '''
         Get the key of the database row which contains the user with the given
         nickname.
 
         :param str nickname: The nickname of the user to search.
-        :return: the database attribute user_id or None if ``nickname`` does
-            not exit.
-        :rtype: str
+        :return: the database attribute user_id  or None if ``nickname`` does not exit.
+        :rtype: int
 
         '''
-
-        '''
-        TASK5 TODO :
-        * Implement this method.
-        HINTS:
-          * Check the method get_message as an example.
-          * The value to return is a string and not a dictionary
-          * You can access the columns of a database row in the same way as
-            in a python dictionary: row [attribute] (Check the exercises slides
-            for more information)
-          * There is only one possible user_id associated to a nickname
-          * HOW TO TEST: Use the database_api_tests_user. The following tests
-            must pass without failure or error:
-                * test_get_user_id
-                * test_get_user_id_unknown_user
-        '''
-
+        # Init
         self.set_foreign_keys_support()
-
-        query = 'SELECT * FROM users WHERE nickname = ?'
-
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
+
+        query = 'SELECT * FROM users WHERE nickname = ?'
 
         pvalue = (nickname,)
         cur.execute(query, pvalue)
@@ -809,10 +902,36 @@ class Connection(object):
         if row is None:
             return None
 
-        return row['user_id']
+        return int(row['user_id'])
 
-    def contains_user(self, nickname):
+
+    def get_room_id(self, name):
         '''
-        :return: True if the user is in the database. False otherwise
+        Get the key of the database row which contains the user with the given
+        name of the room.
+
+        :param str name: The name of the room to search.
+        :return: the database attribute room_id(INTEGER) or None if ``name`` does not exit.
+        :raise: ValueError if name not string
+        :rtype: int
+
         '''
-        return self.get_user_id(nickname) is not None
+
+        if not isinstance(name, basestring):
+            raise ValueError
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        cur.execute('SELECT room_id FROM room WHERE name = %s' % name)
+
+        # return None if room doesn't exist
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        return int(row['room_id'])
+
+

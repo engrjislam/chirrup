@@ -42,5 +42,18 @@ INSERT INTO user (user_id, username, password, email, status, created, updated) 
 INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (9, 'ABC9', '1234567890', '9@gmail.com', 'ACTIVE', 1362017481, NULL);
 INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (10, 'ABC10', '1234567890', '10@gmail.com', 'ACTIVE', 1362017481, NULL);
 
+-- Table: user_profile
+INSERT INTO user_profile (user_id, nickname, image) VALUES (1, 'ABC1', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (2, 'ABC2', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (3, 'ABC3', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (4, 'ABC4', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (5, 'ABC5', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (6, 'ABC6', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (7, 'ABC7', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (8, 'ABC8', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (9, 'ABC9', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (10, 'ABC10', 'something.jpg');
+
+
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
