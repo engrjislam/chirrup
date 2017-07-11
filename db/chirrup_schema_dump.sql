@@ -15,12 +15,12 @@ CREATE TABLE messages (
                                                        ON UPDATE CASCADE
                              NOT NULL,
     content         TEXT     NOT NULL,
-    created         DATETIME NOT NULL
+    created         INTEGER  NOT NULL
 );
 
 
 -- Table: room
-CREATE TABLE rooms (
+CREATE TABLE room (
     room_id BIGINT       PRIMARY KEY,
     name    VARCHAR (64) UNIQUE
                          NOT NULL,
@@ -29,38 +29,38 @@ CREATE TABLE rooms (
                          REFERENCES user (user_id) ON DELETE CASCADE
                                                    ON UPDATE CASCADE,
     status VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
-    created DATETIME     NOT NULL,
-    updated DATETIME
+    created INTEGER     NOT NULL,
+    updated INTEGER
 );
 
 
--- Table: room_members
+-- Table: room_users
 CREATE TABLE room_users (
     id      BIGINT   PRIMARY KEY,
     room_id BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
     user_id BIGINT   REFERENCES user (user_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
-    created DATETIME NOT NULL,
-    updated DATETIME
+    created INTEGER NOT NULL,
+    updated INTEGER
 );
 
-
+/*
 -- Table: token
-CREATE TABLE tokens (
+CREATE TABLE token (
     id      BIGINT        PRIMARY KEY,
-    user_id BIGINT        REFERENCES user (id) ON DELETE RESTRICT
+    user_id BIGINT        REFERENCES user (user_id) ON DELETE RESTRICT
                                                ON UPDATE CASCADE,
     token   VARCHAR (128) NOT NULL
                           UNIQUE,
     status  VARCHAR (8)   NOT NULL,
-    created DATETIME      NOT NULL,
-    updated DATETIME
+    created INTEGER      NOT NULL,
+    updated INTEGER
 );
-
+*/
 
 -- Table: user
-CREATE TABLE users (
+CREATE TABLE user (
     user_id  BIGINT        PRIMARY KEY,
     username VARCHAR (128) UNIQUE
                            NOT NULL,
@@ -68,11 +68,11 @@ CREATE TABLE users (
     email    VARCHAR (64)  UNIQUE
                            NOT NULL,
     status   VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
-    created  DATETIME      NOT NULL,
-    updated  DATETIME
+    created  INTEGER    NOT NULL,
+    updated  INTEGER
 );
 
-CREATE TABLE users_profile (
+CREATE TABLE user_profile (
     user_id  BIGINT        REFERENCES user (user_id) ON DELETE CASCADE
                                                      ON UPDATE CASCADE,
     nickname VARCHAR (64)  UNIQUE

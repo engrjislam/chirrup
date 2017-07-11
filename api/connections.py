@@ -1,7 +1,7 @@
 # course exercise1 database.py used as a template
 
 from datetime import datetime
-import time, sqlite3
+import time, sqlite3, calendar
 
 
 class Connection(object):
@@ -124,11 +124,12 @@ class Connection(object):
             otherwise stated.
 
         '''
-        message_id = 'msg-' + str(row['message_id'])
-        message_room_id = row['room_id']
-        message_user_id = row['user_id']
-        message_created = row['created']
-        message_content = row['content']
+        # values from the row converted to string from unicode string, from u'<string>' to '<string>'
+        message_id = str(row['message_id'])
+        message_room_id = str(row['room_id'])
+        message_user_id = str(row['user_id'])
+        message_created = str(row['created'])
+        message_content = str(row['content'])
 
         message = {'message_id': message_id, 'room_id': message_room_id,
                    'user_id': message_user_id, 'created': message_created,
@@ -216,7 +217,13 @@ class Connection(object):
         :return: A dictionary with the format provided in
             :py:meth:`_create_message_object` or None if the message with target
             id does not exist.
+        :raise ValueError if message_id malformed
         '''
+
+        try:
+            message_id = int(message_id)
+        except:
+            raise ValueError
 
         # Init
         self.set_foreign_keys_support()
@@ -275,8 +282,8 @@ class Connection(object):
 
         '''
 
-        # Check variables
-        if type(number_of_messages) or type(before) or type(after) is not int:
+        # Check input parameters
+        if type(number_of_messages) is not int or type(before) is not int or type(after) is not int:
             raise ValueError
 
         if after > before:
@@ -308,7 +315,7 @@ class Connection(object):
             query += " created > %s" % str(after)
 
         #Order of results
-        query += ' ORDER BY timestamp DESC'
+        query += ' ORDER BY created DESC'
 
         #Limit the number of resulst return
         if number_of_messages > -1:
@@ -374,7 +381,7 @@ class Connection(object):
             return True
 
 
-    def create_message(self, room_id, content, user_id):
+    def create_message(self, room_id, user_id, content):
         '''
         Create a new message with the data provided as arguments.
 
@@ -406,7 +413,7 @@ class Connection(object):
         message_id = cur.lastrowid
         self.con.commit()
 
-        return 'msg-' + str(message_id)
+        return message_id
 
     #MESSAGE UTILS
 

@@ -34,7 +34,7 @@ class Engine(object):
 
     :param db_path: The path of the database file (always with respect to the
         calling script. If not specified, the Engine will use the file located
-        at *db/forum.db*
+        at *db/chirrup.db*
 
     '''
     def __init__(self, db_path=None):
@@ -60,11 +60,52 @@ class Engine(object):
     def remove_database(self):
         '''
         Removes the database file from the filesystem.
-
         '''
         if os.path.exists(self.db_path):
             #THIS REMOVES THE DATABASE STRUCTURE
             os.remove(self.db_path)
+
+    def remove_tables(self):
+        '''
+        Removes tables from the database.
+        '''
+        keys_on = 'PRAGMA foreign_keys = ON'
+        con = sqlite3.connect(self.db_path)
+        with con:
+            cur = con.cursor()
+            # token table
+            query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=token")
+            row = cur.fetchone()
+            print('row: ', row)
+            if row is not None:
+                cur.execute("DROP TABLE token")
+            # user table
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=user")
+            row = cur.fetchone()
+            if row is not None:
+                cur.execute("DROP TABLE user")
+            # user_profile table
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=user_profile")
+            row = cur.fetchone()
+            if row is not None:
+                cur.execute("DROP TABLE user_profile")
+            # room table
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=room")
+            row = cur.fetchone()
+            if row is not None:
+                cur.execute("DROP TABLE room")
+            # room_users table
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=room_users")
+            row = cur.fetchone()
+            if row is not None:
+                cur.execute("DROP TABLE messages")
+            # messages table
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=messages")
+            row = cur.fetchone()
+            if row is not None:
+                cur.execute("DROP TABLE messages")
+
 
     def clear(self):
         '''
@@ -79,10 +120,11 @@ class Engine(object):
         cur.execute(keys_on)
         with con:
             cur = con.cursor()
+            #cur.execute("DELETE FROM token")
             cur.execute("DELETE FROM user")
-            cur.execute("DELETE FROM users")
-            #NOTE since we have ON DELETE CASCADE BOTH IN users_profile AND
-            #friends, WE DO NOT HAVE TO WORRY TO CLEAR THOSE TABLES.
+
+            # ON DELETE CASCADE in user_profile, room, room_users and messages.
+            # token table isn't created
 
     #METHODS TO CREATE AND POPULATE A DATABASE USING DIFFERENT SCRIPTS
     def create_tables(self, schema=None):
@@ -108,8 +150,8 @@ class Engine(object):
         '''
         Populate programmatically the tables from a dump file.
 
-        :param dump:  path to the .sql dump file. If this parmeter is
-            None, then *db/forum_data_dump.sql* is utilized.
+        :param dump:  path to the .sql dump file. If this parameter is
+            None, then *db/chirrup_data_dump.sql* is utilized.
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'

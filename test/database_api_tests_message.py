@@ -23,47 +23,35 @@ A messages' list has the following format:
 
 import sqlite3, unittest
 
-from forum import database
+from api import engine, connections
 
 #Path to the database file, different from the deployment db
-DB_PATH = 'db/forum_test.db'
-ENGINE = database.Engine(DB_PATH)
+DB_PATH = 'db/chirrup_test.db'
+ENGINE = engine.Engine(DB_PATH)
 
 
 #CONSTANTS DEFINING DIFFERENT USERS AND USER PROPERTIES
-MESSAGE1_ID = 'msg-1'
+MESSAGE1_ID = 1
 
-MESSAGE1 = {'messageid': 'msg-1',
-            'title': 'CSS: Margin problems with IE',
-            'body': "I am using a float layout on my website but I've run \
-into some problems with Internet Explorer. I have set the left margin of a \
-float to 100 pixels, but IE uses a margin of 200px instead. Why is that? \
-Is this one of the many bugs in IE?",
-            'timestamp': 1362017481, 'replyto': None, 'sender': 'AxelW',
-            'editor': None}
+MESSAGE1 = {'message_id': MESSAGE1_ID,
+            'user_id': '1',
+            'room_id': '1',
+            'content': 'Hello1',
+            'created': '1362017481'
+            }
 
-MESSAGE1_MODIFIED = {'messageid': MESSAGE1_ID,
-                     'title': 'new title',
-                     'body': 'new body',
-                     'timestamp': 1362017481, 'replyto': None,
-                     'sender': 'AxelW', 'editor': 'new editor'}
+MESSAGE2_ID = 2
 
-MESSAGE2_ID = 'msg-10'
+MESSAGE2 = {'message_id': MESSAGE2_ID,
+            'user_id': '1',
+            'room_id': '2',
+            'content': 'Hi',
+            'created': '1362017481'
+            }
 
-MESSAGE2 = {'messageid': 'msg-10',
-            'title': 'WinZip',
-            'body': "WinZip, for example. There are plenty of other \
-applications that are capable of decompressing ZIP files, but WinZip is \
-probably the most popular one. You can also try to google for UltimateZip, \
-PowerArchiver, 7-Zip, IZArc and WinRAR. Choose whichever program you like.",
-            'timestamp': 1362017481,
-            'replyto': 'msg-1',
-            'sender': 'Koodari',
-            'editor': None}
+WRONG_MESSAGE_ID = 200
 
-WRONG_MESSAGE_ID = 'msg-200'
-
-INITIAL_SIZE = 20
+INITIAL_SIZE = 10
 
 
 class MessageDBAPITestCase(unittest.TestCase):
@@ -90,7 +78,7 @@ class MessageDBAPITestCase(unittest.TestCase):
         '''
         Populates the database
         '''
-        #This method load the initial values from forum_data_dump.sql
+        #This method load the initial values from chirrup_data_dump.sql
         ENGINE.populate_tables()
 
         #Creates a Connection instance to use the API
@@ -105,8 +93,8 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_messages_table_created(self):
         '''
-        Checks that the table initially contains 20 messages (check
-        forum_data_dump.sql). NOTE: Do not use Connection instance but
+        Checks that the table initially contains 10 messages (check
+        chirrup_data_dump.sql). NOTE: Do not use Connection instance but
         call directly SQL.
         '''
         print '('+self.test_messages_table_created.__name__+')', \
@@ -124,14 +112,14 @@ class MessageDBAPITestCase(unittest.TestCase):
             cur.execute(keys_on)
             #Execute main SQL Statement
             cur.execute(query)
-            users = cur.fetchall()
+            messages = cur.fetchall()
             #Assert
-            self.assertEquals(len(users), INITIAL_SIZE)
+            self.assertEquals(len(messages), INITIAL_SIZE)
 
     def test_create_message_object(self):
         '''
         Check that the method _create_message_object works return adequate
-        values for the first database row. NOTE: Do not use Connection instace
+        values for the first database row. NOTE: Do not use Connection instance
         to extract data from database but call directly SQL.
         '''
         print '('+self.test_create_message_object.__name__+')', \
@@ -169,13 +157,13 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_get_message_malformedid(self):
         '''
-        Test get_message with id 1 (malformed)
+        Test get_message with id "msg-1" (malformed)
         '''
         print '('+self.test_get_message_malformedid.__name__+')', \
               self.test_get_message_malformedid.__doc__
         #Test with an existing message
         with self.assertRaises(ValueError):
-            self.connection.get_message('1')
+            self.connection.get_message('msg-1')
 
     def test_get_message_noexistingid(self):
         '''
@@ -198,45 +186,44 @@ class MessageDBAPITestCase(unittest.TestCase):
         #Iterate throug messages and check if the messages with MESSAGE1_ID and
         #MESSAGE2_ID are correct:
         for message in messages:
-            if message['messageid'] == MESSAGE1_ID:
-                self.assertEquals(len(message), 4)
+            if message['message_id'] == MESSAGE1_ID:
+                self.assertEquals(len(message), 5)
                 self.assertDictContainsSubset(message, MESSAGE1)
-            elif message['messageid'] == MESSAGE2_ID:
-                self.assertEquals(len(message), 4)
+            elif message['message_id'] == MESSAGE2_ID:
+                self.assertEquals(len(message), 5)
                 self.assertDictContainsSubset(message, MESSAGE2)
 
-    def test_get_messages_specific_user(self):
+    def test_get_messages_specific_room(self):
         '''
-        Get all messages from user Mystery. Check that their ids are 13 and 14.
+        Get all messages from room_id 1. Check that their ids are 1 and 2.
         '''
-        #Messages sent from Mystery are 13 and 14
-        print '('+self.test_get_messages_specific_user.__name__+')', \
-              self.test_get_messages_specific_user.__doc__
-        messages = self.connection.get_messages(nickname="Mystery")
+        print '('+self.test_get_messages_specific_room.__name__+')', \
+              self.test_get_messages_specific_room.__doc__
+        messages = self.connection.get_messages(room_id=1)
         self.assertEquals(len(messages), 2)
-        #Messages id are 13 and 14
+        #Messages id are 1 and 2
         for message in messages:
-            self.assertIn(message['messageid'], ('msg-13', 'msg-14'))
-            self.assertNotIn(message['messageid'], ('msg-1', 'msg-2',
-                                                    'msg-3', 'msg-4'))
+            self.assertIn(message['messageid'], ('1', '2'))
+            self.assertNotIn(message['messageid'], ('100', '12312',
+                                                    '5', '33'))
 
     def test_get_messages_length(self):
         '''
         Check that the number_of_messages  is working in get_messages
         '''
-        #Messages sent from Mystery are 2
+        # Two messages in room id 1
         print '('+self.test_get_messages_length.__name__+')',\
               self.test_get_messages_length.__doc__
-        messages = self.connection.get_messages(nickname="Mystery",
+        messages = self.connection.get_messages(room_id=1,
                                                 number_of_messages=2)
         self.assertEquals(len(messages), 2)
-        #Number of messages is 20
-        messages = self.connection.get_messages(number_of_messages=1)
+        #Number of messages is 2
+        messages = self.connection.get_messages(room_id=1, number_of_messages=1)
         self.assertEquals(len(messages), 1)
 
     def test_delete_message(self):
         '''
-        Test that the message msg-1 is deleted
+        Test that the message message is deleted
         '''
         print '('+self.test_delete_message.__name__+')', \
               self.test_delete_message.__doc__
@@ -248,17 +235,18 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_delete_message_malformedid(self):
         '''
-        Test that trying to delete message wit id ='2' raises an error
+        Test that trying to delete message with id ='600' (string) raises an error
         '''
         print '('+self.test_delete_message_malformedid.__name__+')', \
               self.test_delete_message_malformedid.__doc__
         #Test with an existing message
         with self.assertRaises(ValueError):
-            self.connection.delete_message('1')
+            self.connection.delete_message('msg-1')
+
 
     def test_delete_message_noexistingid(self):
         '''
-        Test delete_message with  msg-200 (no-existing)
+        Test delete_message with message_id 200 (no-existing)
         '''
         print '('+self.test_delete_message_noexistingid.__name__+')', \
               self.test_delete_message_noexistingid.__doc__
@@ -266,128 +254,31 @@ class MessageDBAPITestCase(unittest.TestCase):
         resp = self.connection.delete_message(WRONG_MESSAGE_ID)
         self.assertFalse(resp)
 
-    def test_modify_message(self):
-        '''
-        Test that the message msg-1 is modifed
-        '''
-        print '('+self.test_modify_message.__name__+')', \
-              self.test_modify_message.__doc__
-        resp = self.connection.modify_message(MESSAGE1_ID, "new title",
-                                              "new body", "new editor")
-        self.assertEquals(resp, MESSAGE1_ID)
-        #Check that the messages has been really modified through a get
-        resp2 = self.connection.get_message(MESSAGE1_ID)
-        self.assertDictContainsSubset(resp2, MESSAGE1_MODIFIED)
-
-    def test_modify_message_malformedid(self):
-        '''
-        Test that trying to modify message wit id ='2' raises an error
-        '''
-        print '('+self.test_modify_message_malformedid.__name__+')',\
-              self.test_modify_message_malformedid.__doc__
-        #Test with an existing message
-        with self.assertRaises(ValueError):
-            self.connection.modify_message('1', "new title", "new body",
-                                           "editor")
-
-    def test_modify_message_noexistingid(self):
-        '''
-        Test modify_message with  msg-200 (no-existing)
-        '''
-        print '('+self.test_modify_message_noexistingid.__name__+')',\
-              self.test_modify_message_noexistingid.__doc__
-        #Test with an existing message
-        resp = self.connection.modify_message(WRONG_MESSAGE_ID, "new title",
-                                              "new body", "editor")
-        self.assertIsNone(resp)
-
     def test_create_message(self):
         '''
         Test that a new message can be created
         '''
         print '('+self.test_create_message.__name__+')',\
               self.test_create_message.__doc__
-        messageid = self.connection.create_message("new title", "new body",
-                                                   "Koodari")
-        self.assertIsNotNone(messageid)
+        message_id = self.connection.create_message(1, 1, 'Hello from the otter side.')
+        self.assertIsNotNone(message_id)
         #Get the expected modified message
         new_message = {}
-        new_message['title'] = 'new title'
-        new_message['body'] = 'new body'
-        new_message['sender'] = 'Koodari'
+        new_message['room_id'] = '1'
+        new_message['user_id'] = '1'
+        new_message['content'] = 'Hello from the otter side.'
+
         #Check that the messages has been really modified through a get
-        resp2 = self.connection.get_message(messageid)
+        resp2 = self.connection.get_message(message_id)
         self.assertDictContainsSubset(new_message, resp2)
         #CHECK NOW NOT REGISTERED USER
-        messageid = self.connection.create_message("new title", "new body",
-                                                   "anonymous_User")
-        self.assertIsNotNone(messageid)
-        #Get the expected modified message
-        new_message = {}
-        new_message['title'] = 'new title'
-        new_message['body'] = 'new body'
-        new_message['sender'] = 'anonymous_User'
-        #Check that the messages has been really modified through a get
-        resp2 = self.connection.get_message(messageid)
-        self.assertDictContainsSubset(new_message, resp2)
+        message_id = self.connection.create_message(1, 1000, 'lol_xD')
+        self.assertIsNone(message_id)
 
-    def test_append_answer(self):
-        '''
-        Test that a new message can be replied
-        '''
-        print '('+self.test_append_answer.__name__+')',\
-              self.test_append_answer.__doc__
-        messageid = self.connection.append_answer(MESSAGE1_ID,
-                                            "new title", "new body", "Koodari")
-        self.assertIsNotNone(messageid)
-        #Get the expected modified message
-        new_message = {}
-        new_message['title'] = 'new title'
-        new_message['body'] = 'new body'
-        new_message['sender'] = 'Koodari'
-        new_message['replyto'] = MESSAGE1_ID
-        #Check that the messages has been really modified through a get
-        resp2 = self.connection.get_message(messageid)
-        self.assertDictContainsSubset(new_message, resp2)
-        #CHECK NOW NOT REGISTERED USER
-        messageid = self.connection.append_answer(MESSAGE1_ID,
-                                     "new title", "new body", "anonymous_User")
-        self.assertIsNotNone(messageid)
-        #Get the expected modified message
-        new_message = {}
-        new_message['title'] = 'new title'
-        new_message['body'] = 'new body'
-        new_message['sender'] = 'anonymous_User'
-        new_message['replyto'] = MESSAGE1_ID
-        #Check that the messages has been really modified through a get
-        resp2 = self.connection.get_message(messageid)
-        self.assertDictContainsSubset(new_message, resp2)
-
-    def test_append_answer_malformed_id(self):
-        '''
-        Test that trying to reply message wit id ='2' raises an error
-        '''
-        print '('+self.test_append_answer_malformed_id.__name__+')',\
-              self.test_append_answer_malformed_id.__doc__
-        #Test with an existing message
-        with self.assertRaises(ValueError):
-            self.connection.append_answer('1', "new title", "new body",
-                                          "Koodari")
-
-    def test_append_answer_noexistingid(self):
-        '''
-        Test append_answer with  msg-200 (no-existing)
-        '''
-        print '('+self.test_append_answer_noexistingid.__name__+')',\
-              self.test_append_answer_noexistingid.__doc__
-        #Test with an existing message
-        resp = self.connection.append_answer(WRONG_MESSAGE_ID,
-                                "new title", "new body", "Koodari")
-        self.assertIsNone(resp)
 
     def test_not_contains_message(self):
         '''
-        Check if the database does not contain messages with id msg-200
+        Check if the database does not contain messages with id 200
 
         '''
         print '('+self.test_contains_message.__name__+')', \
@@ -396,7 +287,7 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_contains_message(self):
         '''
-        Check if the database contains messages with id msg-1 and msg-10
+        Check if the database contains messages with id 1 and 2
 
         '''
         print '('+self.test_contains_message.__name__+')', \
