@@ -1,13 +1,10 @@
 '''
-PWP course exercise 1 database.py used as a template for implementation
+Programmable Web Project course exercise 1 database.py used as a template for implementation
 
-Created on 13.02.2013
-
-Modified on 05.02.2016
+Created on 11.07.2017
 
 Provides the database API to access the forum persistent data.
 
-@author: ivan
 '''
 
 import sqlite3, os, connections

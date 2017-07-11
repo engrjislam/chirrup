@@ -1,12 +1,16 @@
-# course exercise1 database.py used as a template
+'''
+Programmable Web Project course exercise 1 database.py used as a template for implementation
+
+Created on 11.07.2017
+'''
 
 from datetime import datetime
-import time, sqlite3, calendar
+import time, sqlite3
 
 
 class Connection(object):
     '''
-    API to access the Forum database.
+    API to access the Chirrup database.
 
     The sqlite3 connection instance is accessible to all the methods of this
     class through the :py:attr:`self.con` attribute.
@@ -241,7 +245,6 @@ class Connection(object):
         if row is None:
             return None
         #Build the return object
-        print('row in get_message(): ', row)
         return self._create_message_object(row)
 
     def get_messages(self, room_id, number_of_messages=-1,
@@ -279,8 +282,14 @@ class Connection(object):
 
         :raises ValueError: if ``before`` or ``after`` are not valid UNIX
             timestamps or ``before`` > ``after`` or arguments type is not int.
+        :raises ValueError: if room_id not convertable to int.
 
         '''
+
+        try:
+            room_id = int(room_id)
+        except:
+            raise ValueError
 
         # Check input parameters
         if type(number_of_messages) is not int or type(before) is not int or type(after) is not int:
@@ -342,6 +351,7 @@ class Connection(object):
         :param str message:id: id of the message to remove.
         :type message_id: int
         :return: True if the message has been deleted, False otherwise
+        :raise: ValueError if message_id not correct format
         '''
 
         '''
@@ -361,6 +371,12 @@ class Connection(object):
             * test_delete_message_malformed_id
             * test_delete_message_noexisting_id
         '''
+        # Check that id correct format
+        try:
+            message_id = int(message_id)
+        except:
+            raise ValueError
+
 
         # Cursor and row initialization
         self.con.row_factory = sqlite3.Row
@@ -394,8 +410,17 @@ class Connection(object):
             not found. Note that it is a string with the format msg-\d{1,3}.
 
         :raises ChirrupDatabaseError: if the database could not be modified.
+        :raises ValueError: if parameters in wrong format
 
         '''
+        try:
+            room_id = int(room_id)
+            user_id = int(user_id)
+        except:
+            raise ValueError
+
+        if not isinstance(content, basestring):
+            raise ValueError
 
         self.set_foreign_keys_support()
 
@@ -404,10 +429,9 @@ class Connection(object):
 
         cur = self.con.cursor()
 
-        # make a query to messages table to get the last id
-        params = (room_id, user_id, content, time.mktime(datetime.now().timetuple()))
-        stmnt = 'INSERT INTO messages (room_id, user_id, content, created) \
-                VALUES (?,?,?,?)'
+        # make a query to messages table
+        params = (room_id, user_id, content, int(time.mktime(datetime.now().timetuple())))
+        stmnt = 'INSERT INTO messages (room_id, user_id, content, created) VALUES (?,?,?,?)'
 
         cur.execute(stmnt, params)
         message_id = cur.lastrowid
@@ -426,6 +450,10 @@ class Connection(object):
         :return: True if the message is in the database. False otherwise.
 
         '''
+        try:
+            message_id = int(message_id)
+        except:
+            raise ValueError
         return self.get_message(message_id) is not None
 
 

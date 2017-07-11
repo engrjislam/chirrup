@@ -8,7 +8,7 @@ BEGIN TRANSACTION;
 
 -- Table: messages
 CREATE TABLE messages (
-    message_id      BIGINT   PRIMARY KEY,
+    message_id      INTEGER  PRIMARY KEY ,
     room_id         BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
                                                        ON UPDATE CASCADE,
     user_id         BIGINT   REFERENCES user (user_id) ON DELETE CASCADE

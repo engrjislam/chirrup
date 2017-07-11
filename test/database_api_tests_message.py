@@ -1,29 +1,27 @@
 '''
-Created on 13.02.2014
-Modified on 01.02.2016
+Based on Pro
+
+Created on 11.07.2017
+
 Database interface testing for all users related methods.
 
-A Message object is a dictionary which contains the following keys:
-      - messageid: id of the message (int)
-      - title: message's title
-      - body: message's TEXT
-      - timestamp: UNIX timestamp (long integer) that specifies when the
+A Message object is a dictionary which contains the following keys in a string-format:
+      - message_id: id of the message
+      - room_id: the id of the room where the message was sent to
+      - user_id: the id of the user who sent the message
+      - content: the content of the message
+      - created: UNIX timestamp (long integer) that specifies when the
                    message was created.
-      - replyto: The id of the parent message. String with the format
-                   msg-{id}. Its value can be None.
-      - sender: The nickname of the message's creator
-      - editor: The nickname of the message's editor.
 
-A messages' list has the following format:
-[{'messageid':'', 'title':'', 'timestamp':, 'sender':''},
- {'messageid':'', 'title':'', 'timestamp':, 'sender':''}]
+A messages' list consists of several message objects.
 
-@author: ivan
 '''
 
-import sqlite3, unittest
+import sqlite3
+import unittest
+import time
 
-from api import engine, connections
+from api import engine
 
 #Path to the database file, different from the deployment db
 DB_PATH = 'db/chirrup_test.db'
@@ -33,18 +31,18 @@ ENGINE = engine.Engine(DB_PATH)
 #CONSTANTS DEFINING DIFFERENT USERS AND USER PROPERTIES
 MESSAGE1_ID = 1
 
-MESSAGE1 = {'message_id': MESSAGE1_ID,
-            'user_id': '1',
+MESSAGE1 = {'message_id': str(MESSAGE1_ID),
             'room_id': '1',
+            'user_id': '3',
             'content': 'Hello1',
             'created': '1362017481'
             }
 
 MESSAGE2_ID = 2
 
-MESSAGE2 = {'message_id': MESSAGE2_ID,
-            'user_id': '1',
-            'room_id': '2',
+MESSAGE2 = {'message_id': str(MESSAGE2_ID),
+            'room_id': '1',
+            'user_id': '2',
             'content': 'Hi',
             'created': '1362017481'
             }
@@ -175,10 +173,10 @@ class MessageDBAPITestCase(unittest.TestCase):
         message = self.connection.get_message(WRONG_MESSAGE_ID)
         self.assertIsNone(message)
 
+    # support for getting messages for only one room
+    '''
     def test_get_messages(self):
-        '''
-        Test that get_messages work correctly
-        '''
+
         print '('+self.test_get_messages.__name__+')', self.test_get_messages.__doc__
         messages = self.connection.get_messages()
         #Check that the size is correct
@@ -192,6 +190,7 @@ class MessageDBAPITestCase(unittest.TestCase):
             elif message['message_id'] == MESSAGE2_ID:
                 self.assertEquals(len(message), 5)
                 self.assertDictContainsSubset(message, MESSAGE2)
+    '''
 
     def test_get_messages_specific_room(self):
         '''
@@ -203,8 +202,8 @@ class MessageDBAPITestCase(unittest.TestCase):
         self.assertEquals(len(messages), 2)
         #Messages id are 1 and 2
         for message in messages:
-            self.assertIn(message['messageid'], ('1', '2'))
-            self.assertNotIn(message['messageid'], ('100', '12312',
+            self.assertIn(message['message_id'], ('1', '2'))
+            self.assertNotIn(message['message_id'], ('100', '12312',
                                                     '5', '33'))
 
     def test_get_messages_length(self):
@@ -241,7 +240,7 @@ class MessageDBAPITestCase(unittest.TestCase):
               self.test_delete_message_malformedid.__doc__
         #Test with an existing message
         with self.assertRaises(ValueError):
-            self.connection.delete_message('msg-1')
+            self.connection.delete_message('msg-600')
 
 
     def test_delete_message_noexistingid(self):
@@ -271,9 +270,13 @@ class MessageDBAPITestCase(unittest.TestCase):
         #Check that the messages has been really modified through a get
         resp2 = self.connection.get_message(message_id)
         self.assertDictContainsSubset(new_message, resp2)
-        #CHECK NOW NOT REGISTERED USER
-        message_id = self.connection.create_message(1, 1000, 'lol_xD')
-        self.assertIsNone(message_id)
+
+        # Create two messages with the same content
+        time.sleep(1)
+        message_id = self.connection.create_message(1, 1, 'Hello from the otter side.')
+        resp2 = self.connection.get_message(message_id)
+        self.assertDictContainsSubset(new_message, resp2)
+
 
 
     def test_not_contains_message(self):
