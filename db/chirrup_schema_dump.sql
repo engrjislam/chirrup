@@ -29,20 +29,19 @@ CREATE TABLE room (
                          REFERENCES user (user_id) ON DELETE RESTRICT  -- user can't remove the account if admin in a room
                                                    ON UPDATE CASCADE,
     status VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
-    created INTEGER     NOT NULL,
+    created INTEGER      NOT NULL,
     updated INTEGER
 );
 
 
--- Table: room_users
+-- Table: room_users, named based on room and user relation
 CREATE TABLE room_users (
     id      BIGINT   PRIMARY KEY,
     room_id BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
     user_id BIGINT   REFERENCES user (user_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
-    created INTEGER NOT NULL,
-    updated INTEGER
+    joined INTEGER NOT NULL
 );
 
 /*
