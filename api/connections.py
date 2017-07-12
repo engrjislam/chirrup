@@ -26,6 +26,7 @@ class Connection(object):
     :type dbpath: str
 
     '''
+
     def __init__(self, db_path):
         super(Connection, self).__init__()
         self.con = sqlite3.connect(db_path)
@@ -39,7 +40,7 @@ class Connection(object):
             self.con.commit()
             self.con.close()
 
-    #FOREIGN KEY STATUS
+    # FOREIGN KEY STATUS
     def check_foreign_keys_status(self):
         '''
         Check if the foreign keys has been activated.
@@ -50,11 +51,11 @@ class Connection(object):
 
         '''
         try:
-            #Create a cursor to receive the database values
+            # Create a cursor to receive the database values
             cur = self.con.cursor()
-            #Execute the pragma command
+            # Execute the pragma command
             cur.execute('PRAGMA foreign_keys')
-            #We know we retrieve just one record: use fetchone()
+            # We know we retrieve just one record: use fetchone()
             data = cur.fetchone()
             is_activated = data == (1,)
             print "Foreign Keys status: %s" % 'ON' if is_activated else 'OFF'
@@ -73,10 +74,10 @@ class Connection(object):
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
         try:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
+            # Get the cursor object.
+            # It allows to execute SQL code and traverse the result set
             cur = self.con.cursor()
-            #execute the pragma command, ON
+            # execute the pragma command, ON
             cur.execute(keys_on)
             return True
         except sqlite3.Error, excp:
@@ -92,21 +93,17 @@ class Connection(object):
         '''
         keys_on = 'PRAGMA foreign_keys = OFF'
         try:
-            #Get the cursor object.
-            #It allows to execute SQL code and traverse the result set
+            # Get the cursor object.
+            # It allows to execute SQL code and traverse the result set
             cur = self.con.cursor()
-            #execute the pragma command, OFF
+            # execute the pragma command, OFF
             cur.execute(keys_on)
             return True
         except sqlite3.Error, excp:
             print "Error %s:" % excp.args[0]
             return False
 
-    #HELPERS
-    #Here the helpers that transform database rows into dictionary. They work
-    #similarly to ORM
-
-    #Helpers for messages
+    # HELPERS
     def _create_message_object(self, row):
         '''
         It takes a :py:class:`sqlite3.Row` and transform it into a dictionary.
@@ -138,7 +135,7 @@ class Connection(object):
                    'content': message_content}
         return message
 
-    #Helpers for users
+    # Helpers for users
     def _create_user_object(self, row):
         '''
         It takes a database Row and transform it into a python dictionary.
@@ -150,7 +147,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','password':'','email':'',
+                'restricted_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -160,7 +157,6 @@ class Connection(object):
             * ``image``: name of the image file
 
             * ``username``: used for login
-            * ``password``: used for login
             * ``email``: current email of the user, login and user contact purposes
             * ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
             * ``created``: when the user account was created, UNIX timestamp when the user registered in the system (long integer)
@@ -173,7 +169,6 @@ class Connection(object):
                                    'image': str(row['image'])},
                 'restricted_profile': {'user_id': str(row['user_id']),
                                        'username': str(row['username']),
-                                       'password': str(row['password']),
                                        'email': str(row['email']),
                                        'status': str(row['status']),
                                        'created': str(row['created']),
@@ -191,9 +186,8 @@ class Connection(object):
         :return: a dictionary with the keys ``registrationdate`` and
             ``nickname``
         '''
-        
-        return {'registrationdate': row['regDate'], 'nickname': row['nickname']}
 
+        return {'registrationdate': row['regDate'], 'nickname': row['nickname']}
 
     def _create_room_object(self, row):
         '''
@@ -222,7 +216,6 @@ class Connection(object):
             'updated': str(row['updated'])
         }
 
-
     def _check_if_exists(self, cursor, id, id_type, table):
         # FUNCTION NOT USED YET
         '''
@@ -239,7 +232,6 @@ class Connection(object):
             return False
         else:
             return True
-
 
     def _check_id(self, id):
         '''
@@ -281,12 +273,12 @@ class Connection(object):
         # Execute the query
         pvalue = (message_id,)
         cur.execute(query, pvalue)
-        #Process the response.
-        #Just one row is expected
+        # Process the response.
+        # Just one row is expected
         row = cur.fetchone()
         if row is None:
             return None
-        #Build the return object
+        # Build the return object
         return self._create_message_object(row)
 
     def get_messages(self, room_id, number_of_messages=-1,
@@ -355,36 +347,35 @@ class Connection(object):
         # of room_id, numbero_of_messages, before and after arguments.
         query = 'SELECT * FROM messages WHERE room_id=%s' % str(room_id)
 
-        #Before restriction
+        # Before restriction
         if before != -1:
             query += ' AND'
             query += " created < %s" % str(before)
-        #After restriction
+        # After restriction
         if after != -1:
             if before != -1:
                 query += ' AND'
             query += " created > %s" % str(after)
 
-        #Order of results
+        # Order of results
         query += ' ORDER BY created DESC'
 
-        #Limit the number of resulst return
+        # Limit the number of resulst return
         if number_of_messages > -1:
             query += ' LIMIT ' + str(number_of_messages)
 
-        #Execute main SQL Statement
+        # Execute main SQL Statement
         cur.execute(query)
-        #Get results
+        # Get results
         rows = cur.fetchall()
         if rows is None:
             return None
-        #Build the return object
+        # Build the return object
         messages = []
         for row in rows:
             message = self._create_message_object(row)
             messages.append(message)
         return messages
-
 
     def delete_message(self, message_id):
         '''
@@ -419,7 +410,6 @@ class Connection(object):
         else:
             self.con.commit()
             return True
-
 
     def create_message(self, room_id, user_id, content):
         '''
@@ -460,7 +450,7 @@ class Connection(object):
 
         return message_id
 
-    #MESSAGE UTILS
+    # MESSAGE UTILS
 
     def contains_message(self, message_id):
         '''
@@ -477,30 +467,29 @@ class Connection(object):
             raise ValueError
         return self.get_message(message_id) is not None
 
-
-    #ACCESSING THE USER and USER_PROFILE tables
+    # ACCESSING THE USER and USER_PROFILE tables
     def get_users(self):
         '''
         Extracts all users in the database.
 
         :return: list of Users-object of the database.  None is returned if the database has no users.
         '''
-        #Create the SQL Statements
-          #SQL Statement for retrieving the users
+        # Create the SQL Statements
+        # SQL Statement for retrieving the users
         query = 'SELECT user.*, user_profile.* FROM user, user_profile \
                  WHERE user.user_id = user_profile.user_id'
-        #Activate foreign key support
+        # Activate foreign key support
         self.set_foreign_keys_support()
-        #Create the cursor
+        # Create the cursor
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        #Execute main SQL Statement
+        # Execute main SQL Statement
         cur.execute(query)
-        #Process the results
+        # Process the results
         rows = cur.fetchall()
         if rows is None:
             return None
-        #Process the response.
+        # Process the response.
         users = []
         for row in rows:
             users.append(self._create_user_object(row))
@@ -538,9 +527,9 @@ class Connection(object):
                           WHERE user.user_id = ? \
                           AND user_profile.user_id = user.user_id'
         # Create first the value
-        pvalue = (user_id, )
+        pvalue = (user_id,)
         cur.execute(query, pvalue)
-        #Process the response. Only one possible row is expected.
+        # Process the response. Only one possible row is expected.
         row = cur.fetchone()
         return self._create_user_object(row)
 
@@ -574,7 +563,7 @@ class Connection(object):
         cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = %s' % user_id)
         self.con.commit()
 
-        #Check that it has been deleted
+        # Check that it has been deleted
         if cur.rowcount < 1:
             # maybe return the list of rooms where admin?
             return False
@@ -590,7 +579,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','password':'','email':'',
+                'restricted_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -600,7 +589,6 @@ class Connection(object):
             * ``image``: name of the image file
 
             * ``username``: used for login
-            * ``password``: used for login
             * ``email``: current email of the user, login and user contact purposes
             * ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
             * ``created``: when the user account was created, UNIX timestamp when the user registered in the system (long integer)
@@ -634,12 +622,11 @@ class Connection(object):
         nickname = user['public_profile']['nickname']
         image = user['public_profile']['image']
         username = user['private_profile']['username']
-        # password modification in a seperate method
         email = user['private_profile']['email']
 
         # query for updating user profile
         params1 = (nickname, image, user_id)
-        query1= 'UPDATE user_profile SET nickname = ?, image = ? WHERE user_id = ?'
+        query1 = 'UPDATE user_profile SET nickname = ?, image = ? WHERE user_id = ?'
 
         # query for updating info in the user-table
         params2 = (username, email, int(time.mktime(datetime.now().timetuple())), user_id)
@@ -668,7 +655,7 @@ class Connection(object):
         return user_id
 
     def append_user(self, user):
-        #TODO is user status needed in the user object? Should there exist a different kind of user object?
+        # TODO is user status needed in the user object? Should there exist a different kind of user object?
         '''
         Append a new user.
 
@@ -677,7 +664,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','password':'','email':'',
+                'restricted_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -790,7 +777,6 @@ class Connection(object):
 
         return int(room_id)
 
-
     def delete_room(self, room_id):
         '''
         Set ``status`` of the room to "INACTIVE". The information can be retrieved if the admin wants it.
@@ -820,12 +806,11 @@ class Connection(object):
         cur.execute('UPDATE room SET status = "INACTIVE" WHERE room_id = %s' % room_id)
         self.con.commit()
 
-        #Check that it has been deleted
+        # Check that it has been deleted
         if cur.rowcount < 1:
             # maybe return the list of rooms where admin?
             return False
         return True
-
 
     def modify_room(self, room_id, room):
         '''
@@ -883,7 +868,6 @@ class Connection(object):
         if status not in ['ACTIVE', 'INACTIVE']:
             raise ValueError
 
-
         params = (name, _type, admin, status, int(time.mktime(datetime.now().timetuple())), room_id)
         query = 'UPDATE room SET name = ?, type = ?, admin = ?, status = ?, updated = ? WHERE room_id = ?'
 
@@ -899,7 +883,6 @@ class Connection(object):
             return None
 
         return room_id
-
 
     def add_room_member(self, room_id, user_id):
         '''
@@ -935,14 +918,14 @@ class Connection(object):
         if row is None:
             return None
 
-        cur.execute('INSERT INTO room_users (NULL, %s, %s, %s)' % (room_id, user_id, int(time.mktime(datetime.now().timetuple()))))
+        cur.execute('INSERT INTO room_users (NULL, %s, %s, %s)' % (
+        room_id, user_id, int(time.mktime(datetime.now().timetuple()))))
 
         if cur.rowcount < 1:
             return False
         else:
             self.con.commit()
             return True
-
 
     def remove_room_member(self, room_id, user_id):
         '''
@@ -986,7 +969,6 @@ class Connection(object):
             self.con.commit()
             return True
 
-
     def get_room(self, room_id):
         '''
         Gets room information.
@@ -1017,7 +999,6 @@ class Connection(object):
             return None
 
         return self._create_room_object(row)
-
 
     def get_user_rooms(self, user_id):
         '''
@@ -1061,7 +1042,6 @@ class Connection(object):
                 rooms.append[{'joined': rooms_joined[index], 'room': room}]
 
         return rooms
-
 
     def get_rooms(self, keyword='', room_type='', number_of_rooms=-1, before=-1, after=-1):
         # not tested, additional feature
@@ -1239,7 +1219,6 @@ class Connection(object):
 
         return row['name']
 
-
     def get_room_id(self, name):
         '''
         Get the key of the database row which contains the user with the given
@@ -1268,5 +1247,3 @@ class Connection(object):
             return None
 
         return int(row['room_id'])
-
-

@@ -19,28 +19,28 @@ INSERT INTO messages (message_id, room_id, user_id, content, created) VALUES (9,
 INSERT INTO messages (message_id, room_id, user_id, content, created) VALUES (10, 3, 2, 'gggg', 1362017481);
 
 -- Table: room
-INSERT INTO room (room_id, name, type, user_id, status, created, updated) VALUES (1, 'room1', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
-INSERT INTO room (room_id, name, type, user_id, status, created, updated) VALUES (2, 'room2', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
-INSERT INTO room (room_id, name, type, user_id, status, created, updated) VALUES (3, 'room3', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (1, 'room1', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (2, 'room2', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (3, 'room3', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
 
 -- Table: room_users
-INSERT INTO room_users (id, room_id, user_id, created, updated) VALUES (1, 1, 3, 1362017481, NULL);
-INSERT INTO room_users (id, room_id, user_id, created, updated) VALUES (2, 1, 2, 1362017481, NULL);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (1, 1, 3, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (2, 1, 2, 1362017481);
 
 -- Table: token
 -- INSERT INTO tokens (id, user_id, token, status, created, updated) VALUES (1, 2, 'assdfghjklwertyuiop', 'ACTIVE', 1362017481, NULL);
 
 -- Table: user
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (1, 'ABC1', '1234567890', '1@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (2, 'ABC2', '1234567890', '2@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (3, 'ABC3', '1234567890', '3@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (4, 'ABC4', '1234567890', '4@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (5, 'ABC5', '1234567890', '5@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (6, 'ABC6', '1234567890', '6@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (7, 'ABC7', '1234567890', '7@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (8, 'ABC8', '1234567890', '8@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (9, 'ABC9', '1234567890', '9@gmail.com', 'ACTIVE', 1362017481, NULL);
-INSERT INTO user (user_id, username, password, email, status, created, updated) VALUES (10, 'ABC10', '1234567890', '10@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (1, 'ABC1', '1@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (2, 'ABC2', '2@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (3, 'ABC3', '3@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (4, 'ABC4', '4@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (5, 'ABC5', '5@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (6, 'ABC6', '6@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (7, 'ABC7', '7@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (8, 'ABC8', '8@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (9, 'ABC9', '9@gmail.com', 'ACTIVE', 1362017481, NULL);
+INSERT INTO user (user_id, username, email, status, created, updated) VALUES (10, 'ABC10', '10@gmail.com', 'ACTIVE', 1362017481, NULL);
 
 -- Table: user_profile
 INSERT INTO user_profile (user_id, nickname, image) VALUES (1, 'ABC1', 'something.jpg');
@@ -50,9 +50,9 @@ INSERT INTO user_profile (user_id, nickname, image) VALUES (4, 'ABC4', 'somethin
 INSERT INTO user_profile (user_id, nickname, image) VALUES (5, 'ABC5', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (6, 'ABC6', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (7, 'ABC7', 'something.jpg');
-INSERT INTO user_profile (user_id, nickname, image) VALUES (8, 'ABC8', 'something.jpg');
-INSERT INTO user_profile (user_id, nickname, image) VALUES (9, 'ABC9', 'something.jpg');
-INSERT INTO user_profile (user_id, nickname, image) VALUES (10, 'ABC10', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (8, 'ABC8', NULL);
+INSERT INTO user_profile (user_id, nickname, image) VALUES (9, 'ABC9', NULL);
+INSERT INTO user_profile (user_id, nickname, image) VALUES (10, 'ABC10', NULL);
 
 
 COMMIT TRANSACTION;

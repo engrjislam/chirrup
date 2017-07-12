@@ -63,7 +63,6 @@ CREATE TABLE user (
     user_id  BIGINT        PRIMARY KEY,
     username VARCHAR (128) UNIQUE
                            NOT NULL,
-    password VARCHAR (64)  NOT NULL,
     email    VARCHAR (64)  UNIQUE
                            NOT NULL,
     status   VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
