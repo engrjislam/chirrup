@@ -10,7 +10,8 @@ BEGIN TRANSACTION;
 CREATE TABLE messages (
     message_id      INTEGER  PRIMARY KEY ,
     room_id         BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
-                                                       ON UPDATE CASCADE,
+                                                       ON UPDATE CASCADE
+                             NOT NULL,
     user_id         BIGINT   REFERENCES user (user_id) ON DELETE CASCADE
                                                        ON UPDATE CASCADE
                              NOT NULL,

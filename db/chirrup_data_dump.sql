@@ -20,8 +20,15 @@ INSERT INTO messages (message_id, room_id, user_id, content, created) VALUES (10
 
 -- Table: room
 INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (1, 'room1', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
-INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (2, 'room2', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (2, 'room2', 'PUBLIC', 2, 'ACTIVE', 1362017481, NULL);
 INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (3, 'room3', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (4, 'room4', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (5, 'room5', 'PUBLIC', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (6, 'room6', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (7, 'room7', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (8, 'room8', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (9, 'room9', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (10, 'room10', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
 
 -- Table: room_users
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (1, 1, 3, 1362017481);
@@ -43,11 +50,11 @@ INSERT INTO user (user_id, username, email, status, created, updated) VALUES (9,
 INSERT INTO user (user_id, username, email, status, created, updated) VALUES (10, 'ABC10', '10@gmail.com', 'ACTIVE', 1362017481, NULL);
 
 -- Table: user_profile
-INSERT INTO user_profile (user_id, nickname, image) VALUES (1, 'ABC1', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (1, 'rICK', 'rick.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (2, 'ABC2', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (3, 'ABC3', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (4, 'ABC4', 'something.jpg');
-INSERT INTO user_profile (user_id, nickname, image) VALUES (5, 'ABC5', 'something.jpg');
+INSERT INTO user_profile (user_id, nickname, image) VALUES (5, 'mORTY', 'morty.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (6, 'ABC6', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (7, 'ABC7', 'something.jpg');
 INSERT INTO user_profile (user_id, nickname, image) VALUES (8, 'ABC8', NULL);

@@ -62,48 +62,6 @@ class Engine(object):
             #THIS REMOVES THE DATABASE STRUCTURE
             os.remove(self.db_path)
 
-    def remove_tables(self):
-        '''
-        Removes tables from the database.
-        '''
-        keys_on = 'PRAGMA foreign_keys = ON'
-        con = sqlite3.connect(self.db_path)
-        with con:
-            cur = con.cursor()
-            # token table
-            query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=token")
-            row = cur.fetchone()
-            print('row: ', row)
-            if row is not None:
-                cur.execute("DROP TABLE token")
-            # user table
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=user")
-            row = cur.fetchone()
-            if row is not None:
-                cur.execute("DROP TABLE user")
-            # user_profile table
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=user_profile")
-            row = cur.fetchone()
-            if row is not None:
-                cur.execute("DROP TABLE user_profile")
-            # room table
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=room")
-            row = cur.fetchone()
-            if row is not None:
-                cur.execute("DROP TABLE room")
-            # room_users table
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=room_users")
-            row = cur.fetchone()
-            if row is not None:
-                cur.execute("DROP TABLE messages")
-            # messages table
-            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=messages")
-            row = cur.fetchone()
-            if row is not None:
-                cur.execute("DROP TABLE messages")
-
-
     def clear(self):
         '''
         Purge the database removing all records from the tables. However,
@@ -117,11 +75,11 @@ class Engine(object):
         cur.execute(keys_on)
         with con:
             cur = con.cursor()
-            #cur.execute("DELETE FROM token")
-            cur.execute("DELETE FROM user")
+            # if user admin in a room, user cannot be deleted, so room deleted first
+            cur.execute('DELETE FROM room')
+            cur.execute('DELETE FROM user')
 
-            # ON DELETE CASCADE in user_profile, room, room_users and messages.
-            # token table isn't created
+            # ON DELETE CASCADE in user_profile, room_users and messages.
 
     #METHODS TO CREATE AND POPULATE A DATABASE USING DIFFERENT SCRIPTS
     def create_tables(self, schema=None):

@@ -147,7 +147,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','email':'',
+                'private_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -165,29 +165,25 @@ class Connection(object):
             Note that all values are string if they are not otherwise indicated.
 
         '''
-        return {'public_profile': {'nickname': str(row['nickname']),
-                                   'image': str(row['image'])},
-                'restricted_profile': {'user_id': str(row['user_id']),
-                                       'username': str(row['username']),
-                                       'email': str(row['email']),
-                                       'status': str(row['status']),
-                                       'created': str(row['created']),
-                                       'updated': str(row['updated'])}
-                }
 
-    # for public information, needed??
-    def _create_user_public_object(self, row):
-        '''
-        Same as :py:meth:`_create_message_object`. However, the resulting
-        dictionary is targeted to build messages in a list.
+        # if python None convert to NULL
+        # only ``updated`` possible to be NULL
+        if row['updated'] == None:
+            updated = 'NULL'
+        else:
+            updated = str(row['updated'])
 
-        :param row: The row obtained from the database.
-        :type row: sqlite3.Row
-        :return: a dictionary with the keys ``registrationdate`` and
-            ``nickname``
-        '''
-
-        return {'registrationdate': row['regDate'], 'nickname': row['nickname']}
+        return {
+            'public_profile': {
+                'nickname': str(row['nickname']),
+                'image': str(row['image'])},
+            'private_profile': {
+                'username': str(row['username']),
+                'email': str(row['email']),
+                'status': str(row['status']),
+                'created': str(row['created']),
+                'updated': updated}
+        }
 
     def _create_room_object(self, row):
         '''
@@ -207,13 +203,20 @@ class Connection(object):
             Note that all values are string if they are not otherwise indicated.
 
         '''
+        # if python None convert to NULL
+        # only ``updated`` possible to be NULL
+        if row['updated'] == None:
+            updated = 'NULL'
+        else:
+            updated = str(row['updated'])
+
         return {
             'name': str(row['name']),
             'type': str(row['type']),
             'admin': str(row['admin']),
             'status': str(row['status']),
             'created': str(row['created']),
-            'updated': str(row['updated'])
+            'updated': updated
         }
 
     def _check_if_exists(self, cursor, id, id_type, table):
@@ -523,7 +526,7 @@ class Connection(object):
         if row is None:
             return None
 
-        query = 'SELECT user.*, user_profile.* FROM users, user_profile \
+        query = 'SELECT user.*, user_profile.* FROM user, user_profile \
                           WHERE user.user_id = ? \
                           AND user_profile.user_id = user.user_id'
         # Create first the value
@@ -579,7 +582,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','email':'',
+                'private_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -664,7 +667,7 @@ class Connection(object):
             .. code-block:: javascript
 
                 {'public_profile':{'nickname':,'image':''},
-                'restricted_profile':{'username':'','email':'',
+                'private_profile':{'username':'','email':'',
                                       'status':'','created':'','updated':''}
                 }
 
@@ -704,27 +707,34 @@ class Connection(object):
         try:
             cur.execute(query1, params1)
         except sqlite3.DatabaseError:
-            raise
+            return False
 
         self.con.commit()
         # Check that the user has been created
         if cur.rowcount < 1:
             return None
         else:
+            print('append_user: cur.lastrowid: ', cur.lastrowid)
             if cur.lastrowid is None:
                 return False
             user_id = int(cur.lastrowid)
 
             # query for updating user profile
-            params2 = (nickname, image, user_id)
-            query2 = 'UPDATE user_profile SET nickname = ?, image = ? WHERE user_id = ?'
+            params2 = (user_id, nickname, image, user_id)
+            print('nickname: ', nickname)
+            print('image: ', image)
+
+
+            query2 = 'UPDATE user_profile SET user_id = ?, nickname = ?, image = ? WHERE user_id = ?'
 
             try:
                 cur.execute(query2, params2)
             except sqlite3.DatabaseError:
-                raise
+                return False
 
+            #cur.fetchone()
             self.con.commit()
+            print('append_user: cur.rowcount: ', cur.rowcount)
             # Check that the room has been modified
             if cur.rowcount < 1:
                 return None
@@ -1152,7 +1162,7 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        query = 'SELECT * FROM users WHERE nickname = ?'
+        query = 'SELECT * FROM user_profile WHERE nickname = ?'
 
         pvalue = (nickname,)
         cur.execute(query, pvalue)
@@ -1247,3 +1257,9 @@ class Connection(object):
             return None
 
         return int(row['room_id'])
+
+    def contains_user(self, user_id):
+        '''
+        :return: True if the user is in the database. False otherwise
+        '''
+        return self.get_user_nickname(user_id) is not None
