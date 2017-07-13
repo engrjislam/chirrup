@@ -58,9 +58,9 @@ class Connection(object):
             # We know we retrieve just one record: use fetchone()
             data = cur.fetchone()
             is_activated = data == (1,)
-            print "Foreign Keys status: %s" % 'ON' if is_activated else 'OFF'
+            print "Foreign Keys status: ?" % 'ON' if is_activated else 'OFF'
         except sqlite3.Error, excp:
-            print "Error %s:" % excp.args[0]
+            print "Error ?:" % excp.args[0]
             self.close()
             raise excp
         return is_activated
@@ -81,7 +81,7 @@ class Connection(object):
             cur.execute(keys_on)
             return True
         except sqlite3.Error, excp:
-            print "Error %s:" % excp.args[0]
+            print "Error ?:" % excp.args[0]
             return False
 
     def unset_foreign_keys_support(self):
@@ -100,7 +100,7 @@ class Connection(object):
             cur.execute(keys_on)
             return True
         except sqlite3.Error, excp:
-            print "Error %s:" % excp.args[0]
+            print "Error ?:" % excp.args[0]
             return False
 
     # HELPERS
@@ -229,10 +229,11 @@ class Connection(object):
         :return: True if id exists, False otherwise
         '''
 
-        cursor.execute('SELECT * from %s WHERE %s = %s' % (table, id_type, id))
+        query = 'SELECT * from ? WHERE ? = ?'
+        cursor.execute(query, (table, id_type, id))
         row = cursor.fetchone()
         if row is None:
-            return False
+            return None
         else:
             return True
 
@@ -247,7 +248,8 @@ class Connection(object):
             id = int(id)
         except:
             raise ValueError
-
+        if id < 0:
+            raise ValueError
         return id
 
     # API ITSELF
@@ -323,10 +325,7 @@ class Connection(object):
 
         '''
 
-        try:
-            room_id = int(room_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
 
         # Check input parameters
         if type(number_of_messages) is not int or type(before) is not int or type(after) is not int:
@@ -340,24 +339,26 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        # Check if message exists
-        cur.execute('SELECT * from messages WHERE message_id = %s' % str(room_id))
+        # Check if room exists
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Create the SQL Statement build the string depending on the existence
-        # of room_id, numbero_of_messages, before and after arguments.
-        query = 'SELECT * FROM messages WHERE room_id=%s' % str(room_id)
+        # of room_id, number_of_messages, before and after arguments.
+        query = 'SELECT * FROM messages WHERE room_id = %s' % room_id
 
         # Before restriction
         if before != -1:
             query += ' AND'
+            # before is int
             query += " created < %s" % str(before)
         # After restriction
         if after != -1:
             if before != -1:
                 query += ' AND'
+            # after is int
             query += " created > %s" % str(after)
 
         # Order of results
@@ -367,7 +368,6 @@ class Connection(object):
         if number_of_messages > -1:
             query += ' LIMIT ' + str(number_of_messages)
 
-        # Execute main SQL Statement
         cur.execute(query)
         # Get results
         rows = cur.fetchall()
@@ -401,12 +401,12 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if message exists
-        cur.execute('SELECT * from messages WHERE message_id = %s' % message_id)
+        cur.execute('SELECT * FROM messages WHERE message_id = ?', (message_id,))
         row = cur.fetchone()
         if row is None:
             return False
 
-        cur.execute('DELETE FROM messages WHERE message_id = %s' % message_id)
+        cur.execute('DELETE FROM messages WHERE message_id = ?', (message_id,))
 
         if cur.rowcount < 1:
             return False
@@ -454,13 +454,11 @@ class Connection(object):
         return message_id
 
     # MESSAGE UTILS
-
     def contains_message(self, message_id):
         '''
         Checks if a message is in the database.
 
-        :param str messageid: Id of the message to search. Note that messageid
-            is a string with the format msg-\d{1,3}.
+        :param int message_id: Id of the message to search.
         :return: True if the message is in the database. False otherwise.
 
         '''
@@ -470,7 +468,7 @@ class Connection(object):
             raise ValueError
         return self.get_message(message_id) is not None
 
-    # ACCESSING THE USER and USER_PROFILE tables
+    # USER RELATED FUNCTIONALITY
     def get_users(self):
         '''
         Extracts all users in the database.
@@ -509,11 +507,7 @@ class Connection(object):
 
         '''
 
-        # check if user_id valid
-        try:
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        user_id = self._check_id(user_id)
 
         # Init
         self.set_foreign_keys_support()
@@ -521,7 +515,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * from user WHERE user_id = ?',  (user_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -534,7 +528,6 @@ class Connection(object):
         cur.execute(query, pvalue)
         # Process the response. Only one possible row is expected.
         row = cur.fetchone()
-        print('get user: row:', row)
         if row is None:
             return None
         return self._create_user_object(row)
@@ -544,16 +537,12 @@ class Connection(object):
         Set ``status`` of the user to "INACTIVE". The information can be retrieved if the user wants it.
         If the user is an admin in a room, the user cannot be removed.
 
-        :param int user_id: The user_id of the user to .
+        :param int user_id: User identifier .
         :return: True if the user is deleted, False otherwise.
         :raise: ValueError if user_id not valid
         '''
 
-        # check if user_id valid
-        try:
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        user_id = self._check_id(user_id)
 
         # Init
         self.set_foreign_keys_support()
@@ -561,17 +550,17 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if user admin in a room
-        cur.execute('SELECT * from room WHERE admin = %s' % user_id)
+        cur.execute('SELECT * from room WHERE admin = ?', (user_id, ))
         row = cur.fetchone()
         if row is not None:
             return False
 
-        cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = %s' % user_id)
+        cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = ?', (user_id, ))
         self.con.commit()
 
         # Check that it has been deleted
         if cur.rowcount < 1:
-            # maybe return the list of rooms where admin?
+            # TODO return list of the rooms where user is admin
             return False
         return True
 
@@ -608,11 +597,8 @@ class Connection(object):
         :raise sqlite3.DatabaseError: if database action not allowed
 
         '''
-        # check if user_id valid
-        try:
-            user_id = int(user_id)
-        except:
-            raise ValueError
+
+        user_id = self._check_id(user_id)
 
         # Init
         self.set_foreign_keys_support()
@@ -620,7 +606,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -661,7 +647,6 @@ class Connection(object):
         return user_id
 
     def append_user(self, user):
-        # TODO is user status needed in the user object? Should there exist a different kind of user object?
         '''
         Append a new user.
 
@@ -705,11 +690,11 @@ class Connection(object):
 
         # query for updating info in the user-table
         params1 = (username, email, 'ACTIVE', int(time.mktime(datetime.now().timetuple())))
-        query1 = 'INSERT INTO user (username, email, status, created) \
-                  VALUES(?, ?, ?, ?)'
+        query1 = 'INSERT INTO user (username, email, status, created) VALUES(?, ?, ?, ?)'
         try:
             cur.execute(query1, params1)
-        except sqlite3.DatabaseError:
+        except sqlite3.DatabaseError, e:
+            # print(e)
             return False
 
         # Check that the user has been created
@@ -721,12 +706,9 @@ class Connection(object):
                 return False
             user_id = int(cur.lastrowid)
 
-            # query for updating user profile
-
             print('nickname: ', nickname)
             print('image: ', image)
-
-
+            # query for updating user profile
             query2 = 'INSERT INTO user_profile (user_id, nickname, image) VALUES (?, ?, ?)'
             params2 = (user_id, nickname, image)
 
@@ -735,8 +717,7 @@ class Connection(object):
             except sqlite3.DatabaseError:
                 return False
 
-
-            #print('append_user: cur.rowcount: ', cur.rowcount)
+            # print('append_user: cur.rowcount: ', cur.rowcount)
             # Check that the room has been modified
             print('cur.rowcount: ', cur.rowcount)
             if cur.rowcount < 1:
@@ -745,14 +726,15 @@ class Connection(object):
 
             return user_id
 
-    # Room related functionality
+    # USER UTILS
+
+    # ROOM RELATED FUNCTIONALITY
     def create_room(self, name, type, admin):
         '''
         Create a new room with the data provided as arguments. Also add admin to the new room.
         :param str name: the name of the room
         :param str type: 'PUBLIC'/'PRIVATE'
         :param int admin: user_id of the admin of the room
-        DEFAULT SHOULD BE THE USER WHO CREATED THE ROOM
         :return: the id of the created message or False if the room creation failed or None if admin doesn't exist
         :raises ValueError: if parameters in wrong format
         :raises sqlite3.IntegrityError: if room name already in use
@@ -771,17 +753,17 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if admin exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % str(admin))
+        cur.execute('SELECT * from user WHERE user_id = ?', (admin, ))
         row = cur.fetchone()
         if row is None:
             return None
 
         params = (name, type, admin, int(time.mktime(datetime.now().timetuple())))
-        stmnt = 'INSERT INTO room (name, type, admin, status, created) VALUES (?, ?, ?, "ACTIVE", ?)'
+        query = 'INSERT INTO room (name, type, admin, status, created) VALUES (?, ?, ?, "ACTIVE", ?)'
 
         # raises sqlite3.IntegrityError when trying to add a room which name is already in use
         try:
-            cur.execute(stmnt, params)
+            cur.execute(query, params)
         except sqlite3.DatabaseError, e:
             print(e)
             return False
@@ -803,11 +785,7 @@ class Connection(object):
         :raise: ValueError if room_id not valid
         '''
 
-        # check if room_id valid
-        try:
-            room_id = int(room_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
 
         # Init
         self.set_foreign_keys_support()
@@ -815,18 +793,19 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % str(room_id))
+        cur.execute('SELECT * from room WHERE room_id = ?', (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
 
-        cur.execute('UPDATE room SET status = "INACTIVE" WHERE room_id = ?', (room_id, ))
+        cur.execute('UPDATE room SET status = "INACTIVE" WHERE room_id = ?', (room_id,))
 
         # Check that it has been deleted
         if cur.rowcount < 1:
-            # maybe return the list of rooms where admin?
             return False
+
         self.con.commit()
+
         return True
 
     def modify_room(self, room_id, room):
@@ -859,7 +838,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * from room WHERE room_id = ?', (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -876,7 +855,7 @@ class Connection(object):
         admin = int(self._check_id(room['admin']))
 
         # Check if admin user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % admin)
+        cur.execute('SELECT * from user WHERE user_id = ?', (admin, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -896,7 +875,7 @@ class Connection(object):
         # Check that the room has been modified
 
         if cur.rowcount < 1:
-            return None
+            return False
         self.con.commit()
 
         return room_id
@@ -911,12 +890,8 @@ class Connection(object):
         :raise: ValueError if room_id or user_id malformed
         '''
 
-        # check if room_id valid
-        try:
-            room_id = int(room_id)
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
+        user_id = self._check_id(user_id)
 
         # Initialization
         self.set_foreign_keys_support()
@@ -924,13 +899,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -940,7 +915,7 @@ class Connection(object):
         try:
             cur.execute(query, params)
         except sqlite3.IntegrityError, e:
-            # print(e)
+            print(e)
             return False
 
         if cur.rowcount < 1:
@@ -959,12 +934,8 @@ class Connection(object):
         :raise: ValueError if room_id or user_id malformed
         '''
 
-        # check if room_id valid
-        try:
-            room_id = int(room_id)
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
+        user_id = self._check_id(user_id)
 
         # Initialization
         self.set_foreign_keys_support()
@@ -972,13 +943,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -1027,7 +998,7 @@ class Connection(object):
 
         # if room 'INACTIVE', don't return it
         if room['status'] == 'INACTIVE':
-            print('room incative')
+            print('room INACTIVE')
             return None
 
         return room
@@ -1042,18 +1013,15 @@ class Connection(object):
         :raise: ValueError if user_id malformed
 
         '''
-        # check if user_id valid
-        try:
-            user_id = int(user_id)
-        except:
-            raise ValueError
+
+        user_id = self._check_id(user_id)
 
         # Initialization
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT room_id, joined FROM room_users WHERE user_id = %s' % user_id)
+        cur.execute('SELECT room_id, joined FROM room_users WHERE user_id = ?', (user_id, ))
         # Get results
         rows = cur.fetchall()
         if rows is None:
@@ -1076,7 +1044,6 @@ class Connection(object):
         return rooms
 
     def get_rooms(self, keyword='', room_type='', number_of_rooms=-1, before=-1, after=-1):
-        # not tested, additional feature
         '''
         Return a list of all the rooms in the database filtered by the
         conditions provided in the parameters.
@@ -1132,16 +1099,19 @@ class Connection(object):
         # Before restriction
         if before != -1:
             query += ' AND'
+            # before is int
             query += ' created < %s' % str(before)
         # After restriction
         if after != -1:
             if before != -1:
                 query += ' AND'
+                # after is int
             query += ' created > %s' % str(after)
         # add keyword which filter the room id names
         if keyword:
             if after != -1 or before != -1:
                 query += ' AND'
+            # TODO fix this sql injection cause
             query += ' name LIKE "%%%s\%%"' % str(keyword)
         # filter with room_status
         if room_type:
@@ -1154,9 +1124,9 @@ class Connection(object):
 
         # Limit the number of rooms returned
         if number_of_rooms > -1:
+            # number_of_rooms is int
             query += ' LIMIT ' + str(number_of_rooms)
 
-        #print('get_rooms: query:', query)
         # Execute main SQL Statement
         cur.execute(query)
         # Get results
@@ -1209,19 +1179,22 @@ class Connection(object):
         :rtype: str
 
         '''
+
+        user_id = self._check_id(user_id)
+
         # Init
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT * FROM user_profile WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * FROM user_profile WHERE user_id = ?', (user_id, ))
 
         # Return None if the user doesn't exist
         row = cur.fetchone()
         if row is None:
             return None
 
-        return row['nickname']
+        return str(row['nickname'])
 
     def get_room_name(self, room_id):
         '''
@@ -1235,25 +1208,21 @@ class Connection(object):
 
         '''
 
-        # check if room_id valid
-        try:
-            room_id = int(room_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
 
         # Init
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT * FROM room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
 
         # Return None if the user doesn't exist
         row = cur.fetchone()
         if row is None:
             return None
 
-        return row['name']
+        return str(row['name'])
 
     def get_room_id(self, name):
         '''
@@ -1261,7 +1230,7 @@ class Connection(object):
         name of the room.
 
         :param str name: The name of the room to search.
-        :return: the database attribute room_id(INTEGER) or None if ``name`` does not exit.
+        :return: the database attribute room_id or None if ``name`` does not exit.
         :raise: ValueError if name not string
         :rtype: int
 
@@ -1275,8 +1244,7 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        query = 'SELECT room_id FROM room WHERE name = ?'
-        cur.execute(query, (name,))
+        cur.execute('SELECT room_id FROM room WHERE name = ?', (name,))
 
         # return None if room doesn't exist
         row = cur.fetchone()
@@ -1298,16 +1266,15 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        query = 'SELECT * FROM user WHERE user_id = ?'
-        cur.execute(query, (user_id,))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
 
         row = cur.fetchone()
         if row is None:
             return None
 
-        if row['status'] == 'ACTIVE':
+        if str(row['status']) == 'ACTIVE':
             return False
-        elif row['status'] == 'INACTIVE':
+        elif str(row['status']) == 'INACTIVE':
             return True
         else:
             # status should never be other than 'ACTIVE' OR 'INACTIVE'
@@ -1326,8 +1293,7 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        query = 'SELECT * FROM room WHERE room_id = ?'
-        cur.execute(query, (room_id,))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
 
         row = cur.fetchone()
         if row is None:
@@ -1352,12 +1318,8 @@ class Connection(object):
         :raise: ValueError if room_id or user_id malformed
         '''
 
-        # check if ids valid
-        try:
-            room_id = int(room_id)
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
+        user_id = self._check_id(user_id)
 
         # Initialization
         self.set_foreign_keys_support()
@@ -1365,13 +1327,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        cur.execute('SELECT * from user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
         row = cur.fetchone()
         if row is None:
             return None
@@ -1390,7 +1352,6 @@ class Connection(object):
         :return: True if the user is in the database. False otherwise
         '''
         return self.get_user_nickname(user_id) is not None
-
 
     def contains_room(self, room_id):
         '''

@@ -232,6 +232,25 @@ class UserDBAPITestCase(unittest.TestCase):
                 self.assertDictContainsSubset(rooms, ROOM1)
             elif rooms['name'] == ROOM2_NAME:
                 self.assertDictContainsSubset(rooms, ROOM2)
+        # TODO test with the different parameters
+
+    def test_get_user_rooms(self):
+        '''
+        Test that get_rooms work correctly and extract required room info
+        '''
+        print '(' + self.test_get_rooms.__name__ + ')', \
+            self.test_get_rooms.__doc__
+        self.assertFalse()
+        rooms = self.connection.get_rooms()
+        # Check that the size is correct
+        self.assertEquals(len(rooms), INITIAL_SIZE)
+        # Iterate through rooms and check if the rooms with ROOM1_ID and
+        # ROOM2_ID are correct:
+        for rooms in rooms:
+            if rooms['name'] == ROOM1_NAME:
+                self.assertDictContainsSubset(rooms, ROOM1)
+            elif rooms['name'] == ROOM2_NAME:
+                self.assertDictContainsSubset(rooms, ROOM2)
 
     def test_delete_room(self):
         '''
