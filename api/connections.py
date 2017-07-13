@@ -1,5 +1,7 @@
 '''
-Programmable Web Project course exercise 1 database.py used as a template for implementation
+Based on University of Oulu's Programmable web project-course exercise 1.
+Homepage:
+http://confluence.atlassian.virtues.fi/display/PWP/521260S+Programmable+Web+Project+%285cu%29+Home
 
 Created on 11.07.2017
 '''
@@ -34,7 +36,6 @@ class Connection(object):
     def close(self):
         '''
         Closes the database connection, commiting all changes.
-
         '''
         if self.con:
             self.con.commit()
@@ -340,7 +341,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if room exists
-        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -515,7 +516,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = ?',  (user_id, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -550,12 +551,12 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if user admin in a room
-        cur.execute('SELECT * from room WHERE admin = ?', (user_id, ))
+        cur.execute('SELECT * FROM room WHERE admin = ?', (user_id,))
         row = cur.fetchone()
         if row is not None:
             return False
 
-        cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = ?', (user_id, ))
+        cur.execute('UPDATE user SET status = "INACTIVE" WHERE user_id = ?', (user_id,))
         self.con.commit()
 
         # Check that it has been deleted
@@ -606,7 +607,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -753,7 +754,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if admin exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (admin, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (admin,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -793,7 +794,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if room exists
-        cur.execute('SELECT * from room WHERE room_id = ?', (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -838,7 +839,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = ?', (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -855,7 +856,7 @@ class Connection(object):
         admin = int(self._check_id(room['admin']))
 
         # Check if admin user exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (admin, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (admin,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -899,13 +900,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -943,13 +944,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (user_id, ))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None
@@ -1021,7 +1022,7 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT room_id, joined FROM room_users WHERE user_id = ?', (user_id, ))
+        cur.execute('SELECT room_id, joined FROM room_users WHERE user_id = ?', (user_id,))
         # Get results
         rows = cur.fetchall()
         if rows is None:
@@ -1187,7 +1188,7 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT * FROM user_profile WHERE user_id = ?', (user_id, ))
+        cur.execute('SELECT * FROM user_profile WHERE user_id = ?', (user_id,))
 
         # Return None if the user doesn't exist
         row = cur.fetchone()
@@ -1327,13 +1328,13 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Check if user exists
-        cur.execute('SELECT * from user WHERE user_id = ?', (user_id,))
+        cur.execute('SELECT * FROM user WHERE user_id = ?', (user_id,))
         row = cur.fetchone()
         if row is None:
             return None
 
         # Check if room exists
-        cur.execute('SELECT * from room WHERE room_id = ?',  (room_id, ))
+        cur.execute('SELECT * FROM room WHERE room_id = ?', (room_id,))
         row = cur.fetchone()
         if row is None:
             return None

@@ -4,9 +4,16 @@ Homepage:
 http://confluence.atlassian.virtues.fi/display/PWP/521260S+Programmable+Web+Project+%285cu%29+Home
 
 Database interface testing for all users related methods.
-The user has a data model represented by the following User dictionary:
+The user objects keys explained:
 
+ - ``nickname``: nickname of the user
+ - ``image``: name of the image file
 
+ - ``username``: used for login
+ - ``email``: current email of the user, login and user contact purposes
+ - ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
+ - ``created``: when the user account was created, UNIX timestamp when the user registered in the system (long integer)
+ - ``updated``: when the user account was modified, UNIX timestamp when the user registered in the system (long integer)
 '''
 import unittest
 import sqlite3

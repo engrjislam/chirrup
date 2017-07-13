@@ -3,8 +3,15 @@ Based on University of Oulu's Programmable web project-course exercise 1.
 Homepage:
 http://confluence.atlassian.virtues.fi/display/PWP/521260S+Programmable+Web+Project+%285cu%29+Home
 
-Database interface testing for all rooms related methods.
-The room has a data model represented by the following User dictionary:
+Database interface testing for all room related methods.
+The room objects has the following keys:
+
+ -  ``name``: name of the room
+ -  ``type``: "PRIVATE" or "PUBLIC"
+ -  ``admin``: user_id of the user with admin privileges, initially given for the user who creates the room
+ -  ``status``: ACTIVE/INACTIVE, deleting a user sets this field INACTIVE.
+ -  ``created``: when the room was created, UNIX timestamp (long integer)
+ -  ``updated``: when the room information(name, type, admin, status) was modified, UNIX timestamp (long integer)
 
 
 '''
