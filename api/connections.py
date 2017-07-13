@@ -744,7 +744,7 @@ class Connection(object):
     # Room related functionality
     def create_room(self, name, type, admin):
         '''
-        Create a new room with the data provided as arguments.
+        Create a new room with the data provided as arguments. Also add admin to the new room.
         :param str name: the name of the room
         :param str type: 'PUBLIC'/'PRIVATE'
         :param int admin: user_id of the admin of the room
@@ -782,8 +782,11 @@ class Connection(object):
         except sqlite3.IntegrityError:
             raise
 
-        room_id = cur.lastrowid
+        room_id = int(cur.lastrowid)
         self.con.commit()
+
+        # Also add admin to the newly created room
+        self.add_room_member(room_id, admin)
 
         return int(room_id)
 
@@ -998,17 +1001,19 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT * FROM room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * FROM room WHERE room_id = %s' % str(room_id))
 
         row = cur.fetchall()
         if row is None:
             return None
 
+        room = self._create_room_object(row)
+
         # if room 'INACTIVE', don't return it
-        if row['status'] == 'INACTIVE':
+        if room['status'] == 'INACTIVE':
             return None
 
-        return self._create_room_object(row)
+        return room
 
     def get_user_rooms(self, user_id):
         '''
@@ -1263,3 +1268,9 @@ class Connection(object):
         :return: True if the user is in the database. False otherwise
         '''
         return self.get_user_nickname(user_id) is not None
+
+    def contains_room(self, room_id):
+        '''
+        :return: True if the room is in the database. False otherwise
+        '''
+        return self.get_room_name(room_id) is not None

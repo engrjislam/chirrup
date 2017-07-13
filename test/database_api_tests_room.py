@@ -3,8 +3,8 @@ Based on University of Oulu's Programmable web project-course exercise 1.
 Homepage:
 http://confluence.atlassian.virtues.fi/display/PWP/521260S+Programmable+Web+Project+%285cu%29+Home
 
-Database interface testing for all users related methods.
-The user has a data model represented by the following User dictionary:
+Database interface testing for all rooms related methods.
+The room has a data model represented by the following User dictionary:
 
 
 '''
@@ -34,7 +34,7 @@ MODIFIED_ROOM1 = {
     'created': '1362017481',
     'updated': 'NULL'
 }
-ROOM2_NAME = 'room2'
+ROOM2_NAME = 'room5'
 ROOM2_ID = 5
 ROOM2 = {
     'name': ROOM2_NAME,
@@ -108,17 +108,18 @@ class UserDBAPITestCase(unittest.TestCase):
         self.connection.close()
         ENGINE.clear()
 
-    def test_users_table_created(self):
+    def test_room_tables_created(self):
         '''
-        Checks that the table initially contains 10 users (chirrup_data_dump.sql).
+        Checks that the room table initially contains 10 rooms room_users table 10 room members.
+        Defined in chirrup_data_dump.sql.
         NOTE: Do not use Connection instance but call directly SQL.
         '''
-        print '(' + self.test_users_table_created.__name__ + ')', \
-            self.test_users_table_created.__doc__
+        print '(' + self.test_room_tables_created.__name__ + ')', \
+            self.test_room_tables_created.__doc__
         # Create the SQL Statement
         keys_on = 'PRAGMA foreign_keys = ON'
-        query1 = 'SELECT * FROM user'
-        query2 = 'SELECT * FROM user_profile'
+        query1 = 'SELECT * FROM room'
+        query2 = 'SELECT * FROM room_users'
         # Connects to the database.
         con = self.connection.con
         with con:
@@ -129,27 +130,26 @@ class UserDBAPITestCase(unittest.TestCase):
             cur.execute(keys_on)
             # Execute main SQL Statement
             cur.execute(query1)
-            users = cur.fetchall()
+            rooms = cur.fetchall()
             # Assert
-            self.assertEquals(len(users), INITIAL_SIZE)
-            # Check the users_profile:
+            self.assertEquals(len(rooms), INITIAL_SIZE)
+            # Check the rooms_profile:
             cur.execute(query2)
-            users = cur.fetchall()
+            rooms = cur.fetchall()
             # Assert
-            self.assertEquals(len(users), INITIAL_SIZE)
+            self.assertEquals(len(rooms), INITIAL_SIZE)
 
-    def test_create_user_object(self):
+    def test_create_room_object(self):
         '''
-        Check that the method create_user_object works return adequate values
+        Check that the method _create_room_object works return adequate values
         for the first database row. NOTE: Do not use Connection instance to
         extract data from database but call directly SQL.
         '''
-        print '(' + self.test_create_user_object.__name__ + ')', \
-            self.test_create_user_object.__doc__
+        print '(' + self.test_create_room_object.__name__ + ')', \
+            self.test_create_room_object.__doc__
         # Create the SQL Statement
         keys_on = 'PRAGMA foreign_keys = ON'
-        query = 'SELECT user.*, user_profile.* FROM user, user_profile \
-                 WHERE user.user_id = user_profile.user_id'
+        query = 'SELECT * FROM room WHERE room_id = 1'
         # Get the sqlite3 con from the Connection instance
         con = self.connection.con
         # I am doing operations after with, so I must explicitly close the
@@ -169,92 +169,92 @@ class UserDBAPITestCase(unittest.TestCase):
             # finally:
         #    con.close()
         # Test the method
-        user = self.connection._create_user_object(row)
-        # update value not available, so it is added to MODIFIED_ROOM1
-        user['private_profile']['updated'] = ROOM1['private_profile']['updated']
-        self.assertDictContainsSubset(user, ROOM1)
+        room = self.connection._create_room_object(row)
+        # update value cannot be known initially, so it is overwritten
+        room['updated'] = ROOM1['updated']
+        self.assertDictContainsSubset(room, ROOM1)
 
-    def test_get_user(self):
+    def test_get_room(self):
         '''
-        Test get_user with id 1 and 5
+        Test get_room with id 1 and 5
         '''
-        print '(' + self.test_get_user.__name__ + ')', \
-            self.test_get_user.__doc__
+        print '(' + self.test_get_room.__name__ + ')', \
+            self.test_get_room.__doc__
 
-        # Test with an existing user
-        user = self.connection.get_user(ROOM1_ID)
-        self.assertDictContainsSubset(user, ROOM1)
-        user = self.connection.get_user(ROOM2_ID)
-        self.assertDictContainsSubset(user, ROOM2)
+        # Test with an existing room
+        room = self.connection.get_room(ROOM1_ID)
+        self.assertDictContainsSubset(room, ROOM1)
+        room = self.connection.get_room(ROOM2_ID)
+        self.assertDictContainsSubset(room, ROOM2)
 
-    def test_get_user_noexisting_id(self):
+    def test_get_room_noexisting_id(self):
         '''
-        Test get_user with id 200/ROOM_WRONG_ID (no-existing)
+        Test get_room with id 200/ROOM_WRONG_ID (no-existing)
         '''
-        print '(' + self.test_get_user_noexisting_id.__name__ + ')', \
-            self.test_get_user_noexisting_id.__doc__
+        print '(' + self.test_get_room_noexisting_id.__name__ + ')', \
+            self.test_get_room_noexisting_id.__doc__
 
-        user = self.connection.get_user(ROOM_WRONG_ID)
-        self.assertIsNone(user)
+        room = self.connection.get_room(ROOM_WRONG_ID)
+        self.assertIsNone(room)
 
-    def test_get_users(self):
+    def test_get_rooms(self):
         '''
-        Test that get_users work correctly and extract required user info
+        Test that get_rooms work correctly and extract required room info
         '''
-        print '(' + self.test_get_users.__name__ + ')', \
-            self.test_get_users.__doc__
-        users = self.connection.get_users()
+        print '(' + self.test_get_rooms.__name__ + ')', \
+            self.test_get_rooms.__doc__
+        rooms = self.connection.get_rooms()
         # Check that the size is correct
-        self.assertEquals(len(users), INITIAL_SIZE)
-        # Iterate through users and check if the users with ROOM1_ID and
+        self.assertEquals(len(rooms), INITIAL_SIZE)
+        # Iterate through rooms and check if the rooms with ROOM1_ID and
         # ROOM2_ID are correct:
-        for user in users:
-            if user['public_profile']['nickname'] == ROOM1_NAME:
-                self.assertDictContainsSubset(user['public_profile'], ROOM1['public_profile'])
-            elif user['public_profile']['nickname'] == ROOM2_NAME:
-                self.assertDictContainsSubset(user['public_profile'], ROOM2['public_profile'])
+        for rooms in rooms:
+            if rooms['name'] == ROOM1_NAME:
+                self.assertDictContainsSubset(rooms['public_profile'], ROOM1['public_profile'])
+            elif rooms['public_profile']['nickname'] == ROOM2_NAME:
+                self.assertDictContainsSubset(rooms['public_profile'], ROOM2['public_profile'])
 
-    def test_delete_user(self):
+    def test_delete_room(self):
         '''
-        Test that the user with ROOM2_ID(5) is deleted. Admin users in room cannot be deleted.
+        Test that the room with ROOM2_ID(5) is deleted. Admin rooms in room cannot be deleted.
         '''
-        print '(' + self.test_delete_user.__name__ + ')', \
-            self.test_delete_user.__doc__
-        resp = self.connection.delete_user(ROOM2_ID)
+        print '(' + self.test_delete_room.__name__ + ')', \
+            self.test_delete_room.__doc__
+        resp = self.connection.delete_room(ROOM2_ID)
         self.assertTrue(resp)
-        # Check that user status is set to 'INACTIVE' through get
-        resp2 = self.connection.get_user(ROOM2_ID)
+        # Check that room status is set to 'INACTIVE' through get
+        resp2 = self.connection.get_room(ROOM2_ID)
         self.assertEquals(resp2['private_profile']['status'], 'INACTIVE')
 
-    def test_delete_only_one_user(self):
+    def test_delete_only_one_room(self):
         '''
-        Test that ensures that only specified user is deleted
+        Test that ensures that only specified room is deleted
         '''
-        print '(' + self.test_delete_only_one_user.__name__ + ')', \
-            self.test_delete_only_one_user.__doc__
+        print '(' + self.test_delete_only_one_room.__name__ + ')', \
+            self.test_delete_only_one_room.__doc__
 
 
-    def test_delete_user_noexisting_id(self):
+    def test_delete_room_noexisting_id(self):
         '''
-        Test delete_user with user_id 200 (no-existing)
+        Test delete_room with room_id 200 (no-existing)
         '''
-        print '(' + self.test_delete_user_noexisting_id.__name__ + ')', \
-            self.test_delete_user_noexisting_id.__doc__
-        # Test with an existing user
-        resp = self.connection.delete_user(ROOM_WRONG_ID)
+        print '(' + self.test_delete_room_noexisting_id.__name__ + ')', \
+            self.test_delete_room_noexisting_id.__doc__
+        # Test with an existing room
+        resp = self.connection.delete_room(ROOM_WRONG_ID)
         self.assertFalse(resp)
 
-    def test_modify_user(self):
+    def test_modify_room(self):
         '''
-        Test that the user with id 1 is modified.
+        Test that the room with id 1 is modified.
         '''
-        print '(' + self.test_modify_user.__name__ + ')', \
-            self.test_modify_user.__doc__
-        # Get the modified user
-        resp = self.connection.modify_user(ROOM1_ID, MODIFIED_ROOM1)
+        print '(' + self.test_modify_room.__name__ + ')', \
+            self.test_modify_room.__doc__
+        # Get the modified room
+        resp = self.connection.modify_room(ROOM1_ID, MODIFIED_ROOM1)
         self.assertEquals(resp, ROOM1_ID)
-        # Check that the users has been really modified through a get
-        resp2 = self.connection.get_user(ROOM1_ID)
+        # Check that the rooms has been really modified through a get
+        resp2 = self.connection.get_room(ROOM1_ID)
         resp_p_profile = resp2['public_profile']
         resp_r_profile = resp2['private_profile']
         # Check the expected values
@@ -262,7 +262,7 @@ class UserDBAPITestCase(unittest.TestCase):
         r_profile = MODIFIED_ROOM1['private_profile']
         self.assertEquals(p_profile['nickname'], resp_p_profile['nickname'])
         self.assertEquals(p_profile['image'], resp_p_profile['image'])
-        self.assertEquals(r_profile['username'], resp_r_profile['username'])
+        self.assertEquals(r_profile['roomname'], resp_r_profile['roomname'])
         self.assertEquals(r_profile['email'], resp_r_profile['email'])
         self.assertEquals(r_profile['status'], resp_r_profile['status'])
         self.assertEquals(r_profile['created'], resp_r_profile['created'])
@@ -271,116 +271,102 @@ class UserDBAPITestCase(unittest.TestCase):
 
         self.assertDictContainsSubset(resp2, MODIFIED_ROOM1)
 
-    def test_modify_user_noexisting_id(self):
+    def test_modify_room_noexisting_id(self):
         '''
-        Test modify_user with id 200 (no-existing)
+        Test modify_room with id 200 (no-existing)
         '''
-        print '(' + self.test_modify_user_noexisting_id.__name__ + ')', \
-            self.test_modify_user_noexisting_id.__doc__
-        # Test with an existing user
-        resp = self.connection.modify_user(ROOM_WRONG_ID, ROOM1)
+        print '(' + self.test_modify_room_noexisting_id.__name__ + ')', \
+            self.test_modify_room_noexisting_id.__doc__
+        # Test with an existing room
+        resp = self.connection.modify_room(ROOM_WRONG_ID, ROOM1)
         self.assertIsNone(resp)
 
-    def test_append_user(self):
-        # TODO returns none when appending a new user
+    def test_create_room(self):
+        # TODO returns none when creating a new room
         '''
-        Test that new users can be added.
+        Test that new rooms can be added.
         '''
-        print '(' + self.test_append_user.__name__ + ')', \
-            self.test_append_user.__doc__
-        user_id = self.connection.append_user(NEW_ROOM)
-        self.assertIsNotNone(user_id)
-        # Check that the user has been added through get
-        resp2 = self.connection.get_user(user_id)
-        self.assertDictContainsSubset(NEW_ROOM['private_profile'],
-                                      resp2['private_profile'])
-        self.assertDictContainsSubset(NEW_ROOM['public_profile'],
-                                      resp2['public_profile'])
+        print '(' + self.test_create_room.__name__ + ')', \
+            self.test_create_room.__doc__
+        room_id = self.connection.create_room(NEW_ROOM)
+        self.assertIsNotNone(room_id)
+        # Check that the room has been added through get
+        resp2 = self.connection.get_room(room_id)
+        self.assertDictContainsSubset(NEW_ROOM, resp2)
+        self.assertDictContainsSubset(NEW_ROOM, resp2)
 
-    def test_append_existing_user(self):
+    def test_create_existing_room(self):
         '''
-        Test that two users cannot be added with the same username, nickname or email.
-        NEW_PLACEHOLDER_ROOM first valid. It is corrupted by ROOM1 (existing user) values. After the test_case
+        Test that two rooms cannot be added with the same name.
+        NEW_PLACEHOLDER_ROOM first valid. It is corrupted by ROOM1 (existing room) values. After the test_case
         the non-existing NEW_PLACEHOLDER_ROOM value is restored.
         '''
-        print '(' + self.test_append_existing_user.__name__ + ')', \
-            self.test_append_existing_user.__doc__
-        pr = 'private_profile'
-        pu = 'public_profile'
-        # username tests
-        NEW_PLACEHOLDER_ROOM['private_profile']['username'] = ROOM1[pr]['username']
-        user_id = self.connection.append_user(NEW_PLACEHOLDER_ROOM)
-        self.assertFalse(user_id)
-        NEW_PLACEHOLDER_ROOM[pr]['username'] = NEW_VALID_ROOM[pr]['username']
-        # nickname tests
-        NEW_PLACEHOLDER_ROOM[pu]['nickname'] = ROOM1[pu]['nickname']
-        user_id = self.connection.append_user(NEW_PLACEHOLDER_ROOM)
-        self.assertFalse(user_id)
-        NEW_PLACEHOLDER_ROOM[pu]['nickname'] = NEW_VALID_ROOM[pu]['nickname']
-        # email tests
-        NEW_PLACEHOLDER_ROOM[pr]['email'] = ROOM1[pr]['email']
-        user_id = self.connection.append_user(NEW_PLACEHOLDER_ROOM)
-        self.assertFalse(user_id)
-        NEW_PLACEHOLDER_ROOM[pr]['email'] = NEW_VALID_ROOM[pr]['email']
+        print '(' + self.test_create_existing_room.__name__ + ')', \
+            self.test_create_existing_room.__doc__
+        # name tests
+        NEW_PLACEHOLDER_ROOM['name'] = ROOM1['name']
+        room_id = self.connection.create_room(NEW_PLACEHOLDER_ROOM)
+        self.assertFalse(room_id)
+        NEW_PLACEHOLDER_ROOM['name'] = NEW_VALID_ROOM['name']
 
-    def test_get_user_id(self):
+    def test_get_room_id(self):
         '''
-        Test that get_user_id returns the right value given a nickname
+        Test that get_room_id returns the right value given a name
         '''
-        print '(' + self.test_get_user_id.__name__ + ')', \
-            self.test_get_user_id.__doc__
-        id = self.connection.get_user_id(ROOM1_NAME)
+        print '(' + self.test_get_room_id.__name__ + ')', \
+            self.test_get_room_id.__doc__
+        id = self.connection.get_room_id(ROOM1_NAME)
         self.assertEquals(ROOM1_ID, id)
-        id = self.connection.get_user_id(ROOM2_NAME)
+        id = self.connection.get_room_id(ROOM2_NAME)
         self.assertEquals(ROOM2_ID, id)
 
-    def test_get_user_nickname(self):
+    def test_get_room_name(self):
         '''
-        Test that get_user_nickname returns the right value given a user_id
+        Test that get_room_name returns the right value given a room_id
         '''
-        print '(' + self.test_get_user_nickname.__name__ + ')', \
-            self.test_get_user_nickname.__doc__
-        id = self.connection.get_user_nickname(ROOM1_ID)
+        print '(' + self.test_get_room_name.__name__ + ')', \
+            self.test_get_room_name.__doc__
+        id = self.connection.get_room_name(ROOM1_ID)
         self.assertEquals(ROOM1_NAME, id)
-        id = self.connection.get_user_nickname(ROOM2_ID)
+        id = self.connection.get_room_name(ROOM2_ID)
         self.assertEquals(ROOM2_NAME, id)
 
-    def test_get_user_id_unknown_user(self):
+    def test_get_room_id_unknown_room(self):
         '''
-        Test that get_user_id returns None when the nickname does not exist
+        Test that get_room_id returns None when the nickname does not exist
         '''
-        print '(' + self.test_get_user_id_unknown_user.__name__ + ')', \
-            self.test_get_user_id_unknown_user.__doc__
-        nickname = self.connection.get_user_id(ROOM_WRONG_NAME)
+        print '(' + self.test_get_room_id_unknown_room.__name__ + ')', \
+            self.test_get_room_id_unknown_room.__doc__
+        nickname = self.connection.get_room_id(ROOM_WRONG_NAME)
         self.assertIsNone(nickname)
 
-    def test_get_user_nickname_unknown_user(self):
+    def test_get_room_name_unknown_room(self):
         '''
-        Test that get_user_nickname returns None when the user_id does not exist
+        Test that get_room_name returns None when the room_id does not exist
         '''
-        print '(' + self.test_get_user_nickname_unknown_user.__name__ + ')', \
-            self.test_get_user_nickname_unknown_user.__doc__
-        id = self.connection.get_user_nickname(ROOM_WRONG_ID)
+        print '(' + self.test_get_room_name_unknown_room.__name__ + ')', \
+            self.test_get_room_name_unknown_room.__doc__
+        id = self.connection.get_room_name(ROOM_WRONG_ID)
         self.assertIsNone(id)
 
-    def test_not_contains_user(self):
+    def test_not_contains_room(self):
         '''
-        Check if the database does not contain users with id 200
+        Check if the database does not contain rooms with id 200
         '''
-        print '(' + self.test_contains_user.__name__ + ')', \
-            self.test_contains_user.__doc__
-        self.assertFalse(self.connection.contains_user(ROOM_WRONG_ID))
+        print '(' + self.test_contains_room.__name__ + ')', \
+            self.test_contains_room.__doc__
+        self.assertFalse(self.connection.contains_room(ROOM_WRONG_ID))
 
-    def test_contains_user(self):
+    def test_contains_room(self):
         '''
-        Check if the database contains users with id 1 and id 5
+        Check if the database contains rooms with id 1 and id 5
         '''
-        print '(' + self.test_contains_user.__name__ + ')', \
-            self.test_contains_user.__doc__
-        self.assertTrue(self.connection.contains_user(ROOM1_ID))
-        self.assertTrue(self.connection.contains_user(ROOM2_ID))
+        print '(' + self.test_contains_room.__name__ + ')', \
+            self.test_contains_room.__doc__
+        self.assertTrue(self.connection.contains_room(ROOM1_ID))
+        self.assertTrue(self.connection.contains_room(ROOM2_ID))
 
 
 if __name__ == '__main__':
-    print 'Start running user tests'
+    print 'Start running room tests'
     unittest.main()
