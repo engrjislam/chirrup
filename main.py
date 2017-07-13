@@ -23,6 +23,16 @@ NEW_USER = {
         'created': '1362017481'
     }
 }
-user_id = con.append_user(NEW_USER)
-print('user_id: ', user_id)
+NEW_ROOM = {
+    'name': 'some_room',
+    'type': 'PUBLIC',
+    'admin': '7'
+}
+
+#user_id = con.append_user(NEW_USER)
+#print('user_id: ', user_id)
+user = con.get_user(11)
+print('user: ', user)
+
+
 con.close()

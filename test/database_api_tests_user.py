@@ -323,8 +323,10 @@ class UserDBAPITestCase(unittest.TestCase):
         self.assertIsNotNone(user_id)
         # Check that the user has been added through get
         resp2 = self.connection.get_user(user_id)
-        self.assertDictContainsSubset(NEW_USER['private_profile'],
-                                      resp2['private_profile'])
+        # add the dates from resp2 to NEW_USER, cannot know the moment when the tests is run
+        NEW_USER['private_profile']['created'] = NEW_USER['private_profile']['created']
+        self.assertDictContainsSubset(NEW_USER['public_profile'],
+                                      resp2['public_profile'])
         self.assertDictContainsSubset(NEW_USER['public_profile'],
                                       resp2['public_profile'])
 

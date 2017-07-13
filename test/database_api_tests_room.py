@@ -39,7 +39,7 @@ ROOM2_ID = 5
 ROOM2 = {
     'name': ROOM2_NAME,
     'type': 'PUBLIC',
-    'admin': '5',
+    'admin': '2',
     'status': 'ACTIVE',
     'created': '1362017481',
     'updated': 'NULL'
@@ -66,6 +66,25 @@ NEW_ROOM = {
     'type': 'PUBLIC',
     'admin': '7'
 }
+# room_member objects
+NEW_ROOM_MEMBER = {
+    'room_id': '2',
+    'user_id': '10'
+}
+JOINED_ROOM_MEMBER = {
+    'room_id': '1',
+    'user_id': '2'
+}
+ADMIN_ROOM_MEMBER = {
+    'room_id': '1',
+    'user_id': '1'
+}
+NOT_ROOM_MEMBER = {
+    'room_id': '3',
+    'user_id': '5'
+}
+# Misc
+INACTIVE_ROOM_ID = 10
 ROOM_WRONG_ID = 200
 ROOM_WRONG_NAME = 'Wubba Lubba Dub Dub'
 INITIAL_SIZE = 10
@@ -210,28 +229,22 @@ class UserDBAPITestCase(unittest.TestCase):
         # ROOM2_ID are correct:
         for rooms in rooms:
             if rooms['name'] == ROOM1_NAME:
-                self.assertDictContainsSubset(rooms['public_profile'], ROOM1['public_profile'])
-            elif rooms['public_profile']['nickname'] == ROOM2_NAME:
-                self.assertDictContainsSubset(rooms['public_profile'], ROOM2['public_profile'])
+                self.assertDictContainsSubset(rooms, ROOM1)
+            elif rooms['name'] == ROOM2_NAME:
+                self.assertDictContainsSubset(rooms, ROOM2)
 
     def test_delete_room(self):
         '''
-        Test that the room with ROOM2_ID(5) is deleted. Admin rooms in room cannot be deleted.
+        Test that the room with ROOM2_ID(5) is deleted.
         '''
         print '(' + self.test_delete_room.__name__ + ')', \
             self.test_delete_room.__doc__
         resp = self.connection.delete_room(ROOM2_ID)
         self.assertTrue(resp)
-        # Check that room status is set to 'INACTIVE' through get
-        resp2 = self.connection.get_room(ROOM2_ID)
-        self.assertEquals(resp2['private_profile']['status'], 'INACTIVE')
-
-    def test_delete_only_one_room(self):
-        '''
-        Test that ensures that only specified room is deleted
-        '''
-        print '(' + self.test_delete_only_one_room.__name__ + ')', \
-            self.test_delete_only_one_room.__doc__
+        # Check that room status is set to 'INACTIVE' with check_if_room_deleted
+        resp2 = self.connection.check_if_room_deleted(ROOM2_ID)
+        self.assertTrue(resp2)
+        # TODO other rooms remain unaffected
 
 
     def test_delete_room_noexisting_id(self):
@@ -251,23 +264,19 @@ class UserDBAPITestCase(unittest.TestCase):
         print '(' + self.test_modify_room.__name__ + ')', \
             self.test_modify_room.__doc__
         # Get the modified room
-        resp = self.connection.modify_room(ROOM1_ID, MODIFIED_ROOM1)
-        self.assertEquals(resp, ROOM1_ID)
+        room_id = self.connection.modify_room(ROOM1_ID, MODIFIED_ROOM1)
+        self.assertEquals(room_id, ROOM1_ID)
+        resp = self.connection.get_room(room_id)
         # Check that the rooms has been really modified through a get
         resp2 = self.connection.get_room(ROOM1_ID)
-        resp_p_profile = resp2['public_profile']
-        resp_r_profile = resp2['private_profile']
         # Check the expected values
-        p_profile = MODIFIED_ROOM1['public_profile']
-        r_profile = MODIFIED_ROOM1['private_profile']
-        self.assertEquals(p_profile['nickname'], resp_p_profile['nickname'])
-        self.assertEquals(p_profile['image'], resp_p_profile['image'])
-        self.assertEquals(r_profile['roomname'], resp_r_profile['roomname'])
-        self.assertEquals(r_profile['email'], resp_r_profile['email'])
-        self.assertEquals(r_profile['status'], resp_r_profile['status'])
-        self.assertEquals(r_profile['created'], resp_r_profile['created'])
+        self.assertEquals(resp['name'], resp2['name'])
+        self.assertEquals(resp['type'], resp2['type'])
+        self.assertEquals(resp['admin'], resp2['admin'])
+        self.assertEquals(resp['status'], resp2['status'])
+        self.assertEquals(resp['created'], resp2['created'])
         # update value not available, so it is added to MODIFIED_ROOM1
-        MODIFIED_ROOM1['private_profile']['updated'] = resp_r_profile['updated']
+        MODIFIED_ROOM1['updated'] = resp2['updated']
 
         self.assertDictContainsSubset(resp2, MODIFIED_ROOM1)
 
@@ -288,12 +297,16 @@ class UserDBAPITestCase(unittest.TestCase):
         '''
         print '(' + self.test_create_room.__name__ + ')', \
             self.test_create_room.__doc__
-        room_id = self.connection.create_room(NEW_ROOM)
+        room_id = self.connection.create_room(NEW_ROOM['name'], NEW_ROOM['type'], int(NEW_ROOM['admin']))
+        print('in test_create_room:')
+        print('room_id: ', room_id)
         self.assertIsNotNone(room_id)
         # Check that the room has been added through get
-        resp2 = self.connection.get_room(room_id)
-        self.assertDictContainsSubset(NEW_ROOM, resp2)
-        self.assertDictContainsSubset(NEW_ROOM, resp2)
+        resp = self.connection.get_room(room_id)
+
+        print('NEW ROOM: ', NEW_ROOM)
+        print('resp', resp)
+        self.assertDictContainsSubset(NEW_ROOM, resp)
 
     def test_create_existing_room(self):
         '''
@@ -305,10 +318,50 @@ class UserDBAPITestCase(unittest.TestCase):
             self.test_create_existing_room.__doc__
         # name tests
         NEW_PLACEHOLDER_ROOM['name'] = ROOM1['name']
-        room_id = self.connection.create_room(NEW_PLACEHOLDER_ROOM)
+        room_id = self.connection.create_room(NEW_PLACEHOLDER_ROOM['name'], NEW_PLACEHOLDER_ROOM['type'],
+                                              int(NEW_PLACEHOLDER_ROOM['admin']))
         self.assertFalse(room_id)
         NEW_PLACEHOLDER_ROOM['name'] = NEW_VALID_ROOM['name']
 
+    def test_add_room_member(self):
+        '''
+        Test that new room_members can be added.
+        '''
+        print '(' + self.test_add_room_member.__name__ + ')', \
+            self.test_add_room_member.__doc__
+        # passed as string, should work anyway
+        resp = self.connection.add_room_member(NEW_ROOM_MEMBER['room_id'], NEW_ROOM_MEMBER['user_id'])
+        self.assertTrue(resp)
+        # check that the room member is added using room_contains_member
+        bool = self.connection.room_contains_member(NEW_ROOM_MEMBER['room_id'], NEW_ROOM_MEMBER['user_id'])
+        self.assertTrue(bool)
+        # trying to add the same user to the same room again
+        resp = self.connection.add_room_member(NEW_ROOM_MEMBER['room_id'], NEW_ROOM_MEMBER['user_id'])
+        self.assertFalse(resp)
+
+    def test_remove_room_member(self):
+        '''
+        Test that room_members can be removed. If admin, cannot be removed.
+        '''
+        print '(' + self.test_remove_room_member.__name__ + ')', \
+            self.test_remove_room_member.__doc__
+        # passed as string, should work anyway
+        resp = self.connection.remove_room_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
+        self.assertTrue(resp)
+        # check that the room member is deleted using room_contains_member
+        bool = self.connection.room_contains_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
+        self.assertFalse(bool)
+        # trying to remove the same user again to the same room again
+        resp = self.connection.remove_room_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
+        self.assertFalse(resp)
+        # try to delete admin
+        resp = self.connection.remove_room_member(ADMIN_ROOM_MEMBER['room_id'], ADMIN_ROOM_MEMBER['user_id'])
+        self.assertFalse(resp)
+        # check that admin is not deleted using room_contains_member
+        bool = self.connection.room_contains_member(ADMIN_ROOM_MEMBER['room_id'], ADMIN_ROOM_MEMBER['user_id'])
+        self.assertTrue(bool)
+
+    # Room helpers tests
     def test_get_room_id(self):
         '''
         Test that get_room_id returns the right value given a name
@@ -366,7 +419,34 @@ class UserDBAPITestCase(unittest.TestCase):
         self.assertTrue(self.connection.contains_room(ROOM1_ID))
         self.assertTrue(self.connection.contains_room(ROOM2_ID))
 
+    def test_check_if_room_deleted(self):
+        '''
+        Test that check_if_room_deleted returns False if room status = 'Active',
+        True if 'INACTIVE' and None if room doesn't exist.
+        '''
+        print '(' + self.test_check_if_room_deleted.__name__ + ')', \
+            self.test_check_if_room_deleted.__doc__
+        # ROOM1_ID has is active
+        deleted = self.connection.check_if_room_deleted(ROOM1_ID)
+        self.assertFalse(deleted)
+        deleted = self.connection.check_if_room_deleted(INACTIVE_ROOM_ID)
+        self.assertTrue(deleted)
+
+    def test_room_contains_member(self):
+        '''
+        Test that room_contains_member works.
+        '''
+        print '(' + self.test_room_contains_member.__name__ + ')', \
+            self.test_room_contains_member.__doc__
+        # passed as string, should work anyway
+        resp = self.connection.room_contains_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
+        self.assertTrue(resp)
+        resp = self.connection.room_contains_member(NOT_ROOM_MEMBER['room_id'], NOT_ROOM_MEMBER['user_id'])
+        self.assertFalse(resp)
+
+        # TODO check with non-existing users and rooms
+
 
 if __name__ == '__main__':
-    print 'Start running room tests'
+    print 'Start running room related tests'
     unittest.main()

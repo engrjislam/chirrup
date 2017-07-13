@@ -9,10 +9,10 @@ BEGIN TRANSACTION;
 -- Table: messages
 CREATE TABLE messages (
     message_id      INTEGER  PRIMARY KEY ,
-    room_id         BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
+    room_id         INTEGER  REFERENCES room (room_id) ON DELETE CASCADE
                                                        ON UPDATE CASCADE
                              NOT NULL,
-    user_id         BIGINT   REFERENCES user (user_id) ON DELETE CASCADE
+    user_id         INTEGER  REFERENCES user (user_id) ON DELETE CASCADE
                                                        ON UPDATE CASCADE
                              NOT NULL,
     content         TEXT     NOT NULL,
@@ -22,14 +22,14 @@ CREATE TABLE messages (
 
 -- Table: room
 CREATE TABLE room (
-    room_id BIGINT       PRIMARY KEY,
+    room_id INTEGER      PRIMARY KEY,
     name    VARCHAR (64) UNIQUE
                          NOT NULL,
     type    VARCHAR (8)  NOT NULL,
-    admin   BIGINT       NOT NULL
+    admin   INTEGER      NOT NULL
                          REFERENCES user (user_id) ON DELETE RESTRICT  -- user can't remove the account if admin in a room
                                                    ON UPDATE CASCADE,
-    status VARCHAR(16)   NOT NULL, -- ACTIVE / INACTIVE
+    status  VARCHAR(16)  NOT NULL, -- ACTIVE / INACTIVE
     created INTEGER      NOT NULL,
     updated INTEGER
 );
@@ -37,19 +37,20 @@ CREATE TABLE room (
 
 -- Table: room_users, named based on room and user relation
 CREATE TABLE room_users (
-    id      BIGINT   PRIMARY KEY,
-    room_id BIGINT   REFERENCES room (room_id) ON DELETE CASCADE
+    id      INTEGER   PRIMARY KEY,
+    room_id INTEGER   REFERENCES room (room_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
-    user_id BIGINT   REFERENCES user (user_id) ON DELETE CASCADE
+    user_id INTEGER   REFERENCES user (user_id) ON DELETE CASCADE
                                                ON UPDATE CASCADE,
-    joined INTEGER NOT NULL
+    joined  INTEGER   NOT NULL,
+    UNIQUE (room_id, user_id)
 );
 
 /*
 -- Table: token
 CREATE TABLE token (
-    id      BIGINT        PRIMARY KEY,
-    user_id BIGINT        REFERENCES user (user_id) ON DELETE RESTRICT
+    id      INTEGER        PRIMARY KEY,
+    user_id INTEGER        REFERENCES user (user_id) ON DELETE RESTRICT
                                                ON UPDATE CASCADE,
     token   VARCHAR (128) NOT NULL
                           UNIQUE,
@@ -61,7 +62,7 @@ CREATE TABLE token (
 
 -- Table: user
 CREATE TABLE user (
-    user_id  BIGINT        PRIMARY KEY,
+    user_id  INTEGER       PRIMARY KEY,
     username VARCHAR (128) UNIQUE
                            NOT NULL,
     email    VARCHAR (64)  UNIQUE
@@ -72,7 +73,7 @@ CREATE TABLE user (
 );
 
 CREATE TABLE user_profile (
-    user_id  BIGINT        REFERENCES user (user_id) ON DELETE CASCADE
+    user_id  INTEGER       REFERENCES user (user_id) ON DELETE CASCADE
                                                      ON UPDATE CASCADE,
     nickname VARCHAR (64)  UNIQUE
                            NOT NULL,

@@ -28,22 +28,19 @@ INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (
 INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (7, 'room7', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
 INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (8, 'room8', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
 INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (9, 'room9', 'PRIVATE', 2, 'ACTIVE', 1362017481, NULL);
-INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (10, 'room10', 'PRIVATE', 1, 'ACTIVE', 1362017481, NULL);
+INSERT INTO room (room_id, name, type, admin, status, created, updated) VALUES (10, 'room10', 'PRIVATE', 1, 'INACTIVE', 1362017481, NULL);
 
 -- Table: room_users
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (1, 1, 3, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (1, 1, 1, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (2, 1, 2, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (3, 1, 3, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (4, 1, 2, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (5, 1, 3, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (6, 2, 2, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (7, 2, 3, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (8, 2, 2, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (9, 2, 3, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (10, 2, 2, 1362017481);
-
--- Table: token
--- INSERT INTO tokens (id, user_id, token, status, created, updated) VALUES (1, 2, 'assdfghjklwertyuiop', 'ACTIVE', 1362017481, NULL);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (4, 1, 4, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (5, 1, 5, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (6, 2, 1, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (7, 2, 2, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (8, 2, 3, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (9, 2, 4, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (10, 2, 5, 1362017481);
 
 -- Table: user
 INSERT INTO user (user_id, username, email, status, created, updated) VALUES (1, 'ABC1', '1@gmail.com', 'ACTIVE', 1362017481, NULL);
@@ -68,6 +65,9 @@ INSERT INTO user_profile (user_id, nickname, image) VALUES (7, 'ABC7', 'somethin
 INSERT INTO user_profile (user_id, nickname, image) VALUES (8, 'ABC8', NULL);
 INSERT INTO user_profile (user_id, nickname, image) VALUES (9, 'ABC9', NULL);
 INSERT INTO user_profile (user_id, nickname, image) VALUES (10, 'ABC10', NULL);
+
+-- Table: token
+-- INSERT INTO tokens (id, user_id, token, status, created, updated) VALUES (1, 2, 'assdfghjklwertyuiop', 'ACTIVE', 1362017481, NULL);
 
 
 COMMIT TRANSACTION;

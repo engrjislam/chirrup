@@ -226,15 +226,16 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_delete_message(self):
         '''
-        Test that the message message is deleted
+        Test that only the intended message is deleted.
         '''
         print '(' + self.test_delete_message.__name__ + ')', \
             self.test_delete_message.__doc__
         resp = self.connection.delete_message(MESSAGE1_ID)
         self.assertTrue(resp)
-        # Check that the messages has been really deleted throug a get
+        # Check that the messages has been really deleted through a get
         resp2 = self.connection.get_message(MESSAGE1_ID)
         self.assertIsNone(resp2)
+        # TODO other messages remain unaffected
 
     def test_delete_message_malformedid(self):
         '''

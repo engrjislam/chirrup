@@ -534,6 +534,9 @@ class Connection(object):
         cur.execute(query, pvalue)
         # Process the response. Only one possible row is expected.
         row = cur.fetchone()
+        print('get user: row:', row)
+        if row is None:
+            return None
         return self._create_user_object(row)
 
     def delete_user(self, user_id):
@@ -709,7 +712,6 @@ class Connection(object):
         except sqlite3.DatabaseError:
             return False
 
-        self.con.commit()
         # Check that the user has been created
         if cur.rowcount < 1:
             return None
@@ -720,24 +722,26 @@ class Connection(object):
             user_id = int(cur.lastrowid)
 
             # query for updating user profile
-            params2 = (user_id, nickname, image, user_id)
+
             print('nickname: ', nickname)
             print('image: ', image)
 
 
-            query2 = 'UPDATE user_profile SET user_id = ?, nickname = ?, image = ? WHERE user_id = ?'
+            query2 = 'INSERT INTO user_profile (user_id, nickname, image) VALUES (?, ?, ?)'
+            params2 = (user_id, nickname, image)
 
             try:
                 cur.execute(query2, params2)
             except sqlite3.DatabaseError:
                 return False
 
-            #cur.fetchone()
-            self.con.commit()
-            print('append_user: cur.rowcount: ', cur.rowcount)
+
+            #print('append_user: cur.rowcount: ', cur.rowcount)
             # Check that the room has been modified
+            print('cur.rowcount: ', cur.rowcount)
             if cur.rowcount < 1:
                 return None
+            self.con.commit()
 
             return user_id
 
@@ -749,11 +753,10 @@ class Connection(object):
         :param str type: 'PUBLIC'/'PRIVATE'
         :param int admin: user_id of the admin of the room
         DEFAULT SHOULD BE THE USER WHO CREATED THE ROOM
-        :return: the id of the created message or False if the room creation failed
+        :return: the id of the created message or False if the room creation failed or None if admin doesn't exist
         :raises ValueError: if parameters in wrong format
         :raises sqlite3.IntegrityError: if room name already in use
         '''
-
         # check parameters
         if not isinstance(name, basestring) or not isinstance(type, basestring):
             raise ValueError
@@ -768,19 +771,20 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if admin exists
-        cur.execute('SELECT * from user WHERE user_id = %s' % admin)
+        cur.execute('SELECT * from user WHERE user_id = %s' % str(admin))
         row = cur.fetchone()
-        if row is not None:
-            return False
+        if row is None:
+            return None
 
         params = (name, type, admin, int(time.mktime(datetime.now().timetuple())))
-        stmnt = 'INSERT INTO room VALUES (NULL, ?, ?, ?, "ACTIVE", ?, NULL)'
+        stmnt = 'INSERT INTO room (name, type, admin, status, created) VALUES (?, ?, ?, "ACTIVE", ?)'
 
         # raises sqlite3.IntegrityError when trying to add a room which name is already in use
         try:
             cur.execute(stmnt, params)
-        except sqlite3.IntegrityError:
-            raise
+        except sqlite3.DatabaseError, e:
+            print(e)
+            return False
 
         room_id = int(cur.lastrowid)
         self.con.commit()
@@ -795,7 +799,7 @@ class Connection(object):
         Set ``status`` of the room to "INACTIVE". The information can be retrieved if the admin wants it.
         (functionality not yet implemented)
         :param int room_id: room identifier
-        :return: True if the room is "deleted", False otherwise.
+        :return: True if the room is "deleted", False otherwise or None if room doesn't exist
         :raise: ValueError if room_id not valid
         '''
 
@@ -811,18 +815,18 @@ class Connection(object):
         cur = self.con.cursor()
 
         # check if room exists
-        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        cur.execute('SELECT * from room WHERE room_id = %s' % str(room_id))
         row = cur.fetchone()
-        if row is not None:
-            return False
+        if row is None:
+            return None
 
-        cur.execute('UPDATE room SET status = "INACTIVE" WHERE room_id = %s' % room_id)
-        self.con.commit()
+        cur.execute('UPDATE room SET status = "INACTIVE" WHERE room_id = ?', (room_id, ))
 
         # Check that it has been deleted
         if cur.rowcount < 1:
             # maybe return the list of rooms where admin?
             return False
+        self.con.commit()
         return True
 
     def modify_room(self, room_id, room):
@@ -862,7 +866,7 @@ class Connection(object):
 
         # check if room parameters valid
         name = room['name']
-        if not isinstance(room, basestring):
+        if not isinstance(name, basestring):
             raise ValueError
 
         _type = room['type']
@@ -877,7 +881,7 @@ class Connection(object):
         if row is None:
             return None
 
-        status = room['STATUS']
+        status = room['status']
         if status not in ['ACTIVE', 'INACTIVE']:
             raise ValueError
 
@@ -887,19 +891,19 @@ class Connection(object):
         try:
             cur.execute(query, params)
         except sqlite3.IntegrityError:
-            raise
+            return False
 
-        self.con.commit()
         # Check that the room has been modified
 
         if cur.rowcount < 1:
             return None
+        self.con.commit()
 
         return room_id
 
     def add_room_member(self, room_id, user_id):
         '''
-        Adds a user to a room i.e. adds a row in the room_users table.
+        Adds a user to a room i.e. adds a row in the room_users table. User can't be joined in a room more than once.
         :param int room_id: room identifier
         :param int user_id: user identifier
         :return: True if the member has been added, False if insert-process failed
@@ -931,14 +935,19 @@ class Connection(object):
         if row is None:
             return None
 
-        cur.execute('INSERT INTO room_users (NULL, %s, %s, %s)' % (
-        room_id, user_id, int(time.mktime(datetime.now().timetuple()))))
+        query = 'INSERT INTO room_users VALUES (NULL, ?, ?, ?)'
+        params = (room_id, user_id, int(time.mktime(datetime.now().timetuple())))
+        try:
+            cur.execute(query, params)
+        except sqlite3.IntegrityError, e:
+            # print(e)
+            return False
 
         if cur.rowcount < 1:
             return False
-        else:
-            self.con.commit()
-            return True
+
+        self.con.commit()
+        return True
 
     def remove_room_member(self, room_id, user_id):
         '''
@@ -974,7 +983,12 @@ class Connection(object):
         if row is None:
             return None
 
-        cur.execute('DELETE FROM room_users WHERE room_id = %s AND user_id = %s' % (room_id, user_id))
+        # check if user admin in the room
+        if str(row['admin']) == str(user_id):
+            return False
+
+        query = 'DELETE FROM room_users WHERE room_id = ? AND user_id = ?'
+        cur.execute(query, (room_id, user_id))
 
         if cur.rowcount < 1:
             return False
@@ -1001,16 +1015,19 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT * FROM room WHERE room_id = %s' % str(room_id))
+        query = 'SELECT * FROM room WHERE room_id = ?'
+        cur.execute(query, (room_id,))
 
-        row = cur.fetchall()
+        row = cur.fetchone()
         if row is None:
+            print('room doesnt exist')
             return None
 
         room = self._create_room_object(row)
 
         # if room 'INACTIVE', don't return it
         if room['status'] == 'INACTIVE':
+            print('room incative')
             return None
 
         return room
@@ -1107,8 +1124,11 @@ class Connection(object):
 
         # Create the SQL Statement build the string depending on the existence
         # of room_id, numbero_of_messages, before and after arguments.
-        query = 'SELECT * FROM room WHERE '
+        query = 'SELECT * FROM room'
 
+        # if parameters add where clause
+        if after != -1 or before != -1 or keyword or room_type:
+            query += ' WHERE'
         # Before restriction
         if before != -1:
             query += ' AND'
@@ -1136,6 +1156,7 @@ class Connection(object):
         if number_of_rooms > -1:
             query += ' LIMIT ' + str(number_of_rooms)
 
+        #print('get_rooms: query:', query)
         # Execute main SQL Statement
         cur.execute(query)
         # Get results
@@ -1254,7 +1275,8 @@ class Connection(object):
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
 
-        cur.execute('SELECT room_id FROM room WHERE name = %s' % name)
+        query = 'SELECT room_id FROM room WHERE name = ?'
+        cur.execute(query, (name,))
 
         # return None if room doesn't exist
         row = cur.fetchone()
@@ -1263,11 +1285,112 @@ class Connection(object):
 
         return int(row['room_id'])
 
+    def check_if_user_deleted(self, user_id):
+        '''
+        Checks if user status is inactive or active.
+        :return: True if the user status INACTIVE. False if ACTIVE, None if user doesn't exist OR
+        'INVALID STATUS' if status in the row is invalid.
+        '''
+        user_id = self._check_id(user_id)
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        query = 'SELECT * FROM user WHERE user_id = ?'
+        cur.execute(query, (user_id,))
+
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        if row['status'] == 'ACTIVE':
+            return False
+        elif row['status'] == 'INACTIVE':
+            return True
+        else:
+            # status should never be other than 'ACTIVE' OR 'INACTIVE'
+            return 'INVALID STATUS'
+
+    def check_if_room_deleted(self, room_id):
+        '''
+        Checks if room status is inactive or active.
+        :return: True if the room status INACTIVE. False if ACTIVE, None if user doesn't exist OR
+        'INVALID STATUS' if status in the row is invalid.
+        '''
+        room_id = self._check_id(room_id)
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        query = 'SELECT * FROM room WHERE room_id = ?'
+        cur.execute(query, (room_id,))
+
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        # convert row values to strings from returned unicode
+        if str(row['status']) == 'ACTIVE':
+            return False
+        elif str(row['status']) == 'INACTIVE':
+            return True
+        else:
+            # status should never be other than 'ACTIVE' OR 'INACTIVE'
+            return 'INVALID STATUS'
+
+    def room_contains_member(self, room_id, user_id):
+        '''
+        Checks if user joined in a room.
+        :param int room_id: room identifier
+        :param int user_id: user identifier
+        :return: True if the user joined in a room, False if not
+        or None if room or user don't exist.
+        :raise: ValueError if room_id or user_id malformed
+        '''
+
+        # check if ids valid
+        try:
+            room_id = int(room_id)
+            user_id = int(user_id)
+        except:
+            raise ValueError
+
+        # Initialization
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        # Check if user exists
+        cur.execute('SELECT * from user WHERE user_id = %s' % user_id)
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        # Check if room exists
+        cur.execute('SELECT * from room WHERE room_id = %s' % room_id)
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        query = 'SELECT * FROM room_users WHERE room_id = ? AND user_id = ?'
+        cur.execute(query, (room_id, user_id))
+
+        row = cur.fetchone()
+        if row is None:
+            return False
+        else:
+            return True
+
     def contains_user(self, user_id):
         '''
         :return: True if the user is in the database. False otherwise
         '''
         return self.get_user_nickname(user_id) is not None
+
 
     def contains_room(self, room_id):
         '''
