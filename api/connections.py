@@ -5,6 +5,7 @@ http://confluence.atlassian.virtues.fi/display/PWP/521260S+Programmable+Web+Proj
 
 Created on 11.07.2017
 '''
+#TODO check when foreign key support not needed
 
 from datetime import datetime
 import time, sqlite3
@@ -240,7 +241,7 @@ class Connection(object):
 
     def _check_id(self, id):
         '''
-        Checks if id possible to convert to int.
+        Checks if id possible to convert to int. Id must be positive.
         :param id:
         :return: id
         :raise: ValueError if conversion not possible
@@ -252,6 +253,21 @@ class Connection(object):
         if id < 0:
             raise ValueError
         return id
+
+    def _check_unix_timestamp(self, timestamp):
+        '''
+        Checks if timestamp possible to convert to int. Id must be positive.
+        :return: timestamp
+        :rtype int
+        :raise: ValueError if conversion not possible
+        '''
+        try:
+            timestamp = int(timestamp)
+        except:
+            raise ValueError
+        if timestamp < 0 or timestamp > 2147483647:
+            raise ValueError
+        return timestamp
 
     # API ITSELF
     # Message Table API.
@@ -329,11 +345,17 @@ class Connection(object):
         room_id = self._check_id(room_id)
 
         # Check input parameters
-        if type(number_of_messages) is not int or type(before) is not int or type(after) is not int:
+        if type(number_of_messages) is not int:
             raise ValueError
 
-        if after > before:
-            raise ValueError
+        if before != -1:
+            before = self._check_unix_timestamp(before)
+        if after != -1:
+            after = self._check_unix_timestamp(after)
+
+        if after != -1 and before != -1:
+            if after > before:
+                raise ValueError
 
         # Initialization
         self.set_foreign_keys_support()
@@ -348,28 +370,33 @@ class Connection(object):
 
         # Create the SQL Statement build the string depending on the existence
         # of room_id, number_of_messages, before and after arguments.
-        query = 'SELECT * FROM messages WHERE room_id = %s' % room_id
+
+        # query parameters are added dynamically based on the function parameters
+        params = (room_id, )
+
+        query = 'SELECT * FROM messages WHERE room_id = ?'
 
         # Before restriction
         if before != -1:
             query += ' AND'
-            # before is int
-            query += " created < %s" % str(before)
+            query += ' created < ?'
+            params += (before, )
         # After restriction
         if after != -1:
             if before != -1:
                 query += ' AND'
-            # after is int
-            query += " created > %s" % str(after)
+            query += ' created > ?'
+            params += (after,)
 
         # Order of results
         query += ' ORDER BY created DESC'
 
-        # Limit the number of resulst return
+        # Limit the number of results return
         if number_of_messages > -1:
-            query += ' LIMIT ' + str(number_of_messages)
+            query += ' LIMIT ?'
+            params += (number_of_messages, )
 
-        cur.execute(query)
+        cur.execute(query, params)
         # Get results
         rows = cur.fetchall()
         if rows is None:
@@ -415,27 +442,27 @@ class Connection(object):
             self.con.commit()
             return True
 
-    def create_message(self, room_id, user_id, content):
+    def create_message(self, room_id, user_id, content, timestamp):
         '''
         Create a new message with the data provided as arguments.
 
         :param int room_id: the room where the message was sent to
-        :param str content: the message's content
-        :param str user_id: the user_id of the person who is editing this
+
+        :param int user_id: the user_id of the person who is editing this
             message.
+        :param str content: the message's content
+        :param int timestamp: the time when the message was received in the server
 
         :return: the id of the created message or None if the message was
-            not found. Note that it is a string with the format msg-\d{1,3}.
+            not found.
 
         :raises ChirrupDatabaseError: if the database could not be modified.
         :raises ValueError: if parameters in wrong format
 
         '''
-        try:
-            room_id = int(room_id)
-            user_id = int(user_id)
-        except:
-            raise ValueError
+        room_id = self._check_id(room_id)
+        user_id = self._check_id(user_id)
+        timestamp = self._check_unix_timestamp(timestamp)
 
         if not isinstance(content, basestring):
             raise ValueError
@@ -445,7 +472,7 @@ class Connection(object):
         cur = self.con.cursor()
 
         # make a query to messages table
-        params = (room_id, user_id, content, int(time.mktime(datetime.now().timetuple())))
+        params = (room_id, user_id, content, timestamp)
         stmnt = 'INSERT INTO messages (room_id, user_id, content, created) VALUES (?,?,?,?)'
 
         cur.execute(stmnt, params)
@@ -1039,7 +1066,7 @@ class Connection(object):
         # get room information for every user room, if room doesn't exist or set to 'INACTIVE' pass it
         for index in range(len(room_ids)):
             room = self.get_room(room_ids[index])
-            if room != None:
+            if room is not None:
                 rooms.append[{'joined': rooms_joined[index], 'room': room}]
 
         return rooms
@@ -1079,11 +1106,17 @@ class Connection(object):
 
         '''
         # Check input parameters
-        if type(number_of_rooms) is not int or type(before) is not int or type(after) is not int:
+        if type(number_of_rooms) is not int:
             raise ValueError
 
-        if after > before:
-            raise ValueError
+        if before != -1:
+            before = self._check_unix_timestamp(before)
+        if after != -1:
+            after = self._check_unix_timestamp(after)
+
+        if after!= -1 and before!= -1:
+            if after > before:
+                raise ValueError
 
         # Initialization
         self.set_foreign_keys_support()
@@ -1091,34 +1124,37 @@ class Connection(object):
         cur = self.con.cursor()
 
         # Create the SQL Statement build the string depending on the existence
-        # of room_id, numbero_of_messages, before and after arguments.
+        # of room_id, number_of_messages, before and after arguments.
+        # query parameters are added dynamically based on the function parameters
+        params = ()
         query = 'SELECT * FROM room'
-
         # if parameters add where clause
         if after != -1 or before != -1 or keyword or room_type:
             query += ' WHERE'
         # Before restriction
         if before != -1:
-            query += ' AND'
             # before is int
-            query += ' created < %s' % str(before)
+            query += ' created < ?'
+            params += (before, )
         # After restriction
         if after != -1:
             if before != -1:
                 query += ' AND'
                 # after is int
-            query += ' created > %s' % str(after)
+            query += ' created > ?'
+            params += (after, )
         # add keyword which filter the room id names
         if keyword:
             if after != -1 or before != -1:
                 query += ' AND'
-            # TODO fix this sql injection cause
-            query += ' name LIKE "%%%s\%%"' % str(keyword)
+            query += ' name LIKE ?'
+            params += ('%' + keyword + '%', )
         # filter with room_status
         if room_type:
             if after != -1 or before != -1 or keyword:
                 query += ' AND'
-            query += ' type = %s' % str(room_type)
+            query += ' type = ?'
+            params += (room_type, )
 
         # Order of results
         query += ' ORDER BY created DESC'
@@ -1126,10 +1162,13 @@ class Connection(object):
         # Limit the number of rooms returned
         if number_of_rooms > -1:
             # number_of_rooms is int
-            query += ' LIMIT ' + str(number_of_rooms)
+            query += ' LIMIT ?'
+            params += (number_of_rooms, )
 
         # Execute main SQL Statement
-        cur.execute(query)
+        #print("query: ", query)
+        #print('params: ', params)
+        cur.execute(query, params)
         # Get results
         rows = cur.fetchall()
         if rows is None:
