@@ -334,7 +334,7 @@ class Connection(object):
             Note that all values in the returned dictionary are string unless
             otherwise stated.
 
-            None is returned if the room_id doesn't exist.
+            None is returned if there exists no messages with given parameters.
 
         :raises ValueError: if ``before`` or ``after`` are not valid UNIX
             timestamps or ``before`` > ``after`` or arguments type is not int.
@@ -383,8 +383,7 @@ class Connection(object):
             params += (before, )
         # After restriction
         if after != -1:
-            if before != -1:
-                query += ' AND'
+            query += ' AND'
             query += ' created > ?'
             params += (after,)
 
@@ -406,6 +405,10 @@ class Connection(object):
         for row in rows:
             message = self._create_message_object(row)
             messages.append(message)
+        # If no messages, return None
+        if len(messages) == 0:
+            return None
+
         return messages
 
     def delete_message(self, message_id):
@@ -729,13 +732,10 @@ class Connection(object):
         if cur.rowcount < 1:
             return None
         else:
-            print('append_user: cur.lastrowid: ', cur.lastrowid)
             if cur.lastrowid is None:
                 return False
             user_id = int(cur.lastrowid)
 
-            print('nickname: ', nickname)
-            print('image: ', image)
             # query for updating user profile
             query2 = 'INSERT INTO user_profile (user_id, nickname, image) VALUES (?, ?, ?)'
             params2 = (user_id, nickname, image)
@@ -745,9 +745,7 @@ class Connection(object):
             except sqlite3.DatabaseError:
                 return False
 
-            # print('append_user: cur.rowcount: ', cur.rowcount)
             # Check that the room has been modified
-            print('cur.rowcount: ', cur.rowcount)
             if cur.rowcount < 1:
                 return None
             self.con.commit()
@@ -1019,14 +1017,12 @@ class Connection(object):
 
         row = cur.fetchone()
         if row is None:
-            print('room doesnt exist')
             return None
 
         room = self._create_room_object(row)
 
         # if room 'INACTIVE', don't return it
         if room['status'] == 'INACTIVE':
-            print('room INACTIVE')
             return None
 
         return room
@@ -1037,9 +1033,8 @@ class Connection(object):
 
         :param int user_id: user_id of the target user
         :return: list of dictionaries in format:
-        {'joined': <UNIX timestamp>, 'room': room_object} or None if ``user_id`` is not in the database
+        {'joined': <UNIX timestamp>, 'room': room_object} or None if ``user_id`` is not in the database or no rooms were found.
         :raise: ValueError if user_id malformed
-
         '''
 
         user_id = self._check_id(user_id)
@@ -1060,14 +1055,16 @@ class Connection(object):
         rooms_joined = []
         rooms = []
         for row in rows:
-            room_ids.append(int(row['room_id'], row['joined']))
+            room_ids.append(int(row['room_id']))
             rooms_joined.append(int(row['joined']))
 
         # get room information for every user room, if room doesn't exist or set to 'INACTIVE' pass it
         for index in range(len(room_ids)):
             room = self.get_room(room_ids[index])
             if room is not None:
-                rooms.append[{'joined': rooms_joined[index], 'room': room}]
+                rooms.append({'joined': rooms_joined[index], 'room': room})
+        if len(rooms) == 0:
+            return None
 
         return rooms
 
@@ -1166,8 +1163,6 @@ class Connection(object):
             params += (number_of_rooms, )
 
         # Execute main SQL Statement
-        #print("query: ", query)
-        #print('params: ', params)
         cur.execute(query, params)
         # Get results
         rows = cur.fetchall()

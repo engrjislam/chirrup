@@ -218,7 +218,6 @@ class UserDBAPITestCase(unittest.TestCase):
         '''
         print '(' + self.test_get_user.__name__ + ')', \
             self.test_get_user.__doc__
-
         # Test with an existing user
         user = self.connection.get_user(USER1_ID)
         self.assertDictContainsSubset(user, USER1)
@@ -263,14 +262,6 @@ class UserDBAPITestCase(unittest.TestCase):
         # Check that user status is set to 'INACTIVE' through get
         resp2 = self.connection.get_user(USER2_ID)
         self.assertEquals(resp2['private_profile']['status'], 'INACTIVE')
-
-    def test_delete_only_one_user(self):
-        '''
-        Test that ensures that only specified user is deleted
-        '''
-        print '(' + self.test_delete_only_one_user.__name__ + ')', \
-            self.test_delete_only_one_user.__doc__
-
 
     def test_delete_user_noexisting_id(self):
         '''
@@ -320,7 +311,6 @@ class UserDBAPITestCase(unittest.TestCase):
         self.assertIsNone(resp)
 
     def test_append_user(self):
-        # TODO returns none when appending a new user
         '''
         Test that new users can be added.
         '''
@@ -374,6 +364,15 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_user_id(USER2_NICKNAME)
         self.assertEquals(USER2_ID, id)
 
+    def test_get_user_id_unknown_user(self):
+        '''
+        Test that get_user_id returns None when the nickname does not exist
+        '''
+        print '(' + self.test_get_user_id_unknown_user.__name__ + ')', \
+            self.test_get_user_id_unknown_user.__doc__
+        nickname = self.connection.get_user_id(USER_WRONG_NICKNAME)
+        self.assertIsNone(nickname)
+
     def test_get_user_nickname(self):
         '''
         Test that get_user_nickname returns the right value given a user_id
@@ -385,15 +384,6 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_user_nickname(USER2_ID)
         self.assertEquals(USER2_NICKNAME, id)
 
-    def test_get_user_id_unknown_user(self):
-        '''
-        Test that get_user_id returns None when the nickname does not exist
-        '''
-        print '(' + self.test_get_user_id_unknown_user.__name__ + ')', \
-            self.test_get_user_id_unknown_user.__doc__
-        nickname = self.connection.get_user_id(USER_WRONG_NICKNAME)
-        self.assertIsNone(nickname)
-
     def test_get_user_nickname_unknown_user(self):
         '''
         Test that get_user_nickname returns None when the user_id does not exist
@@ -403,14 +393,6 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_user_nickname(USER_WRONG_ID)
         self.assertIsNone(id)
 
-    def test_not_contains_user(self):
-        '''
-        Check if the database does not contain users with id 200
-        '''
-        print '(' + self.test_contains_user.__name__ + ')', \
-            self.test_contains_user.__doc__
-        self.assertFalse(self.connection.contains_user(USER_WRONG_ID))
-
     def test_contains_user(self):
         '''
         Check if the database contains users with id 1 and id 5
@@ -419,6 +401,14 @@ class UserDBAPITestCase(unittest.TestCase):
             self.test_contains_user.__doc__
         self.assertTrue(self.connection.contains_user(USER1_ID))
         self.assertTrue(self.connection.contains_user(USER2_ID))
+
+    def test_contains_user_noexisting_id(self):
+        '''
+        Check if the database does not contain users with id 200
+        '''
+        print '(' + self.test_contains_user_noexisting_id.__name__ + ')', \
+            self.test_contains_user_noexisting_id.__doc__
+        self.assertFalse(self.connection.contains_user(USER_WRONG_ID))
 
 
 if __name__ == '__main__':

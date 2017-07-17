@@ -22,7 +22,7 @@ from api import engine
 # Path to the database file, different from the deployment db
 DB_PATH = 'db/chirrup_test.db'
 ENGINE = engine.Engine(DB_PATH)
-# CONSTANTS DEFINING DIFFERENT USERS AND USER PROPERTIES
+# CONSTANTS DEFINING DIFFERENT room AND room_users (room_members) PROPERTIES
 ROOM1_NAME = 'room1'
 ROOM1_ID = 1
 ROOM1 = {
@@ -74,6 +74,10 @@ NEW_ROOM = {
     'admin': '7'
 }
 # room_member objects
+ROOM_MEMBER1 = {
+    'room_id': '1',
+    'user_id': '1'
+}
 NEW_ROOM_MEMBER = {
     'room_id': '2',
     'user_id': '10'
@@ -90,16 +94,18 @@ NOT_ROOM_MEMBER = {
     'room_id': '3',
     'user_id': '5'
 }
+
 # Misc
 INACTIVE_ROOM_ID = 10
 ROOM_WRONG_ID = 200
 ROOM_WRONG_NAME = 'Wubba Lubba Dub Dub'
+USER_WRONG_ID = 200
 INITIAL_SIZE = 10
 
 
 class UserDBAPITestCase(unittest.TestCase):
     '''
-    Test cases for the Users related methods.
+    Test cases for the Rooms related methods.
     '''
 
     # INITIATION AND TEARDOWN METHODS
@@ -219,13 +225,17 @@ class UserDBAPITestCase(unittest.TestCase):
         '''
         print '(' + self.test_get_room_noexisting_id.__name__ + ')', \
             self.test_get_room_noexisting_id.__doc__
-
         room = self.connection.get_room(ROOM_WRONG_ID)
         self.assertIsNone(room)
 
     def test_get_rooms(self):
         '''
-        Test that get_rooms work correctly and extract required room info
+        Test that get_rooms work correctly and extract required room info.
+        Parameter combinations:
+        get_rooms()
+        get_rooms(keyword='1')
+        get_rooms(before='2147483647', after=1, number_of_rooms=5, keyword='room')
+        get_rooms(keyword='abcd')
         '''
         print '(' + self.test_get_rooms.__name__ + ')', \
             self.test_get_rooms.__doc__
@@ -239,29 +249,50 @@ class UserDBAPITestCase(unittest.TestCase):
                 self.assertDictContainsSubset(rooms, ROOM1)
             elif rooms['name'] == ROOM2_NAME:
                 self.assertDictContainsSubset(rooms, ROOM2)
-        # TODO test with the different parameters
+        # Should return two rooms: 'room1' and 'room10'
+        rooms = self.connection.get_rooms(keyword='1')
+        self.assertEquals(len(rooms), 2)
+        # Should return 5 rooms, every room contains the keyword 'room'
+        # 2147483647 is the last possible unix value
+        rooms = self.connection.get_rooms(before='2147483647', after=1, number_of_rooms=5, keyword='room')
+        self.assertEquals(len(rooms), 5)
+        # No keywords 'abcd' in room names, should return 0 rooms
+        rooms = self.connection.get_rooms(keyword='abcd')
+        # Should return two rooms: 'room1' and 'room10'
+        self.assertEquals(len(rooms), 0)
 
     def test_get_user_rooms(self):
         '''
-        Test that get_rooms work correctly and extract required room info
+        Test the get_user_rooms retuns correct rooms for user_id 1.
         '''
         print '(' + self.test_get_rooms.__name__ + ')', \
             self.test_get_rooms.__doc__
-        self.assertFalse()
-        rooms = self.connection.get_rooms()
+        join_information = self.connection.get_user_rooms(user_id=1)
         # Check that the size is correct
-        self.assertEquals(len(rooms), INITIAL_SIZE)
+        self.assertEquals(len(join_information), 2)
         # Iterate through rooms and check if the rooms with ROOM1_ID and
         # ROOM2_ID are correct:
-        for rooms in rooms:
-            if rooms['name'] == ROOM1_NAME:
-                self.assertDictContainsSubset(rooms, ROOM1)
-            elif rooms['name'] == ROOM2_NAME:
-                self.assertDictContainsSubset(rooms, ROOM2)
+        for item in join_information:
+            # user1 in joined to rooms 1 and 2
+            if item['room']['name'] == ROOM1_NAME:
+                self.assertDictContainsSubset(item['room'], ROOM1)
+            elif item['room']['name'] == ROOM2_NAME:
+                self.assertDictContainsSubset(item['room'], ROOM2)
+            # check that joined is correct
+            self.assertEquals(item['joined'], 1362017481)
+
+    def test_get_user_rooms_noexisting_id(self):
+        '''
+        Test the get_user_rooms returns None when no-existing user.
+        '''
+        print '(' + self.test_get_rooms.__name__ + ')', \
+            self.test_get_rooms.__doc__
+        join_information = self.connection.get_user_rooms(user_id=200)
+        self.assertIsNone(join_information)
 
     def test_delete_room(self):
         '''
-        Test that the room with ROOM2_ID(5) is deleted.
+        Test that the room with ROOM2_ID(5) is "deleted"/set to 'INACTIVE'.
         '''
         print '(' + self.test_delete_room.__name__ + ')', \
             self.test_delete_room.__doc__
@@ -270,8 +301,6 @@ class UserDBAPITestCase(unittest.TestCase):
         # Check that room status is set to 'INACTIVE' with check_if_room_deleted
         resp2 = self.connection.check_if_room_deleted(ROOM2_ID)
         self.assertTrue(resp2)
-        # TODO other rooms remain unaffected
-
 
     def test_delete_room_noexisting_id(self):
         '''
@@ -317,21 +346,15 @@ class UserDBAPITestCase(unittest.TestCase):
         self.assertIsNone(resp)
 
     def test_create_room(self):
-        # TODO returns none when creating a new room
         '''
         Test that new rooms can be added.
         '''
         print '(' + self.test_create_room.__name__ + ')', \
             self.test_create_room.__doc__
         room_id = self.connection.create_room(NEW_ROOM['name'], NEW_ROOM['type'], int(NEW_ROOM['admin']))
-        print('in test_create_room:')
-        print('room_id: ', room_id)
         self.assertIsNotNone(room_id)
         # Check that the room has been added through get
         resp = self.connection.get_room(room_id)
-
-        print('NEW ROOM: ', NEW_ROOM)
-        print('resp', resp)
         self.assertDictContainsSubset(NEW_ROOM, resp)
 
     def test_create_existing_room(self):
@@ -361,8 +384,14 @@ class UserDBAPITestCase(unittest.TestCase):
         # check that the room member is added using room_contains_member
         bool = self.connection.room_contains_member(NEW_ROOM_MEMBER['room_id'], NEW_ROOM_MEMBER['user_id'])
         self.assertTrue(bool)
-        # trying to add the same user to the same room again
-        resp = self.connection.add_room_member(NEW_ROOM_MEMBER['room_id'], NEW_ROOM_MEMBER['user_id'])
+
+    def test_add_room_member_existing(self):
+        '''
+        Test that room members can be added only once..
+        '''
+        print '(' + self.test_add_room_member_existing.__name__ + ')', \
+            self.test_add_room_member_existing.__doc__
+        resp = self.connection.add_room_member(ROOM_MEMBER1['room_id'], ROOM_MEMBER1['user_id'])
         self.assertFalse(resp)
 
     def test_remove_room_member(self):
@@ -377,15 +406,22 @@ class UserDBAPITestCase(unittest.TestCase):
         # check that the room member is deleted using room_contains_member
         bool = self.connection.room_contains_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
         self.assertFalse(bool)
-        # trying to remove the same user again to the same room again
-        resp = self.connection.remove_room_member(JOINED_ROOM_MEMBER['room_id'], JOINED_ROOM_MEMBER['user_id'])
-        self.assertFalse(resp)
         # try to delete admin
         resp = self.connection.remove_room_member(ADMIN_ROOM_MEMBER['room_id'], ADMIN_ROOM_MEMBER['user_id'])
         self.assertFalse(resp)
         # check that admin is not deleted using room_contains_member
         bool = self.connection.room_contains_member(ADMIN_ROOM_MEMBER['room_id'], ADMIN_ROOM_MEMBER['user_id'])
         self.assertTrue(bool)
+
+    def test_remove_room_member_noexisting(self):
+        '''
+        Test that remove_room_member returns False if a user doesn't exist
+        '''
+        print '(' + self.test_remove_room_member_noexisting.__name__ + ')', \
+            self.test_remove_room_member_noexisting.__doc__
+        # trying to remove the same user from the same room again
+        resp = self.connection.remove_room_member(NOT_ROOM_MEMBER['room_id'], NOT_ROOM_MEMBER['user_id'])
+        self.assertFalse(resp)
 
     # Room helpers tests
     def test_get_room_id(self):
@@ -399,6 +435,15 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_room_id(ROOM2_NAME)
         self.assertEquals(ROOM2_ID, id)
 
+    def test_get_room_id_unknown_room(self):
+        '''
+        Test that get_room_id returns None when the nickname does not exist
+        '''
+        print '(' + self.test_get_room_id_unknown_room.__name__ + ')', \
+            self.test_get_room_id_unknown_room.__doc__
+        nickname = self.connection.get_room_id(ROOM_WRONG_NAME)
+        self.assertIsNone(nickname)
+
     def test_get_room_name(self):
         '''
         Test that get_room_name returns the right value given a room_id
@@ -410,15 +455,6 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_room_name(ROOM2_ID)
         self.assertEquals(ROOM2_NAME, id)
 
-    def test_get_room_id_unknown_room(self):
-        '''
-        Test that get_room_id returns None when the nickname does not exist
-        '''
-        print '(' + self.test_get_room_id_unknown_room.__name__ + ')', \
-            self.test_get_room_id_unknown_room.__doc__
-        nickname = self.connection.get_room_id(ROOM_WRONG_NAME)
-        self.assertIsNone(nickname)
-
     def test_get_room_name_unknown_room(self):
         '''
         Test that get_room_name returns None when the room_id does not exist
@@ -428,14 +464,6 @@ class UserDBAPITestCase(unittest.TestCase):
         id = self.connection.get_room_name(ROOM_WRONG_ID)
         self.assertIsNone(id)
 
-    def test_not_contains_room(self):
-        '''
-        Check if the database does not contain rooms with id 200
-        '''
-        print '(' + self.test_contains_room.__name__ + ')', \
-            self.test_contains_room.__doc__
-        self.assertFalse(self.connection.contains_room(ROOM_WRONG_ID))
-
     def test_contains_room(self):
         '''
         Check if the database contains rooms with id 1 and id 5
@@ -444,6 +472,14 @@ class UserDBAPITestCase(unittest.TestCase):
             self.test_contains_room.__doc__
         self.assertTrue(self.connection.contains_room(ROOM1_ID))
         self.assertTrue(self.connection.contains_room(ROOM2_ID))
+
+    def test_not_contains_room_noexisting_id(self):
+        '''
+        Check if the database does not contain rooms with id 200
+        '''
+        print '(' + self.test_not_contains_room_noexisting_id.__name__ + ')', \
+            self.test_not_contains_room_noexisting_id.__doc__
+        self.assertFalse(self.connection.contains_room(ROOM_WRONG_ID))
 
     def test_check_if_room_deleted(self):
         '''
@@ -470,8 +506,24 @@ class UserDBAPITestCase(unittest.TestCase):
         resp = self.connection.room_contains_member(NOT_ROOM_MEMBER['room_id'], NOT_ROOM_MEMBER['user_id'])
         self.assertFalse(resp)
 
-        # TODO check with non-existing users and rooms
 
+    def test_room_contains_member_noexisting_user(self):
+        '''
+        Test that room_contains_member returns False with no-existing users.
+        '''
+        print '(' + self.test_room_contains_member_noexisting_user.__name__ + ')', \
+            self.test_room_contains_member_noexisting_user.__doc__
+        resp = self.connection.room_contains_member(5, USER_WRONG_ID)
+        self.assertFalse(resp)
+
+    def test_room_contains_member_noexisting_room(self):
+        '''
+        Test that room_contains_member returns False with no-existing rooms.
+         '''
+        print '(' + self.test_room_contains_member_noexisting_room.__name__ + ')', \
+            self.test_room_contains_member_noexisting_room.__doc__
+        resp = self.connection.room_contains_member(ROOM_WRONG_ID, 5)
+        self.assertFalse(resp)
 
 if __name__ == '__main__':
     print 'Start running room related tests'

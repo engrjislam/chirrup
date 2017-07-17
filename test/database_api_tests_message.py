@@ -49,10 +49,20 @@ MESSAGE2 = {
     'content': 'Hi',
     'created': '1362017481'
 }
-
+# Paremeters in a dict to test create_message()
+NEW_MESSAGE = {
+    'room_id': '1',
+    'user_id': '1',
+    'content': 'Hello from the otter side.',
+    'created': '907123490'
+}
 WRONG_MESSAGE_ID = 200
-
+WRONG_ROOM_ID = 200
+MESSAGES_IN_ROOM_1 = 2
 INITIAL_SIZE = 10
+# Parameters for get_messages()
+NO_MESSAGES_BEFORE = 1362017481
+NO_MESSAGES_AFTER = 1362017481
 
 
 class MessageDBAPITestCase(unittest.TestCase):
@@ -147,7 +157,7 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_get_message(self):
         '''
-        Test get_message with id msg-1 and msg-10
+        Test get_message with id 1 and 2
         '''
         print '(' + self.test_get_message.__name__ + ')', \
             self.test_get_message.__doc__
@@ -169,7 +179,7 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_get_message_noexistingid(self):
         '''
-        Test get_message with msg-200 (no-existing)
+        Test get_message with id 200 (no-existing)
         '''
         print '(' + self.test_get_message_noexistingid.__name__ + ')', \
             self.test_get_message_noexistingid.__doc__
@@ -177,42 +187,32 @@ class MessageDBAPITestCase(unittest.TestCase):
         message = self.connection.get_message(WRONG_MESSAGE_ID)
         self.assertIsNone(message)
 
-    # TODO tests_for test_get_messages
-    '''
     def test_get_messages(self):
-
-        print '('+self.test_get_messages.__name__+')', self.test_get_messages.__doc__
-        messages = self.connection.get_messages()
-        #Check that the size is correct
-        self.assertEquals(len(messages), INITIAL_SIZE)
-        #Iterate throug messages and check if the messages with MESSAGE1_ID and
-        #MESSAGE2_ID are correct:
-        for message in messages:
-            if message['message_id'] == MESSAGE1_ID:
-                self.assertEquals(len(message), 5)
-                self.assertDictContainsSubset(message, MESSAGE1)
-            elif message['message_id'] == MESSAGE2_ID:
-                self.assertEquals(len(message), 5)
-                self.assertDictContainsSubset(message, MESSAGE2)
-    '''
-
-    def test_get_messages_specific_room(self):
         '''
         Get all messages from room_id 1. Check that their ids are 1 and 2.
         '''
-        print '(' + self.test_get_messages_specific_room.__name__ + ')', \
-            self.test_get_messages_specific_room.__doc__
+        print '(' + self.test_get_messages.__name__ + ')', \
+            self.test_get_messages.__doc__
         messages = self.connection.get_messages(room_id=1)
-        self.assertEquals(len(messages), 2)
+        self.assertEquals(len(messages), MESSAGES_IN_ROOM_1)
         # Messages id are 1 and 2
         for message in messages:
             self.assertIn(message['message_id'], ('1', '2'))
             self.assertNotIn(message['message_id'], ('100', '12312',
                                                      '5', '33'))
 
+    def test_get_messages_noexistingid(self):
+        '''
+        Check that get_messages returns None for noexisting room.
+        '''
+        print '(' + self.test_get_messages_noexistingid.__name__ + ')', \
+            self.test_get_messages_noexistingid.__doc__
+        messages = self.connection.get_messages(room_id=200)
+        self.assertIsNone(messages)
+
     def test_get_messages_length(self):
         '''
-        Check that the number_of_messages  is working in get_messages
+        Check that the number_of_messages is working in get_messages
         '''
         # Two messages in room id 1
         print '(' + self.test_get_messages_length.__name__ + ')', \
@@ -224,9 +224,21 @@ class MessageDBAPITestCase(unittest.TestCase):
         messages = self.connection.get_messages(room_id=1, number_of_messages=1)
         self.assertEquals(len(messages), 1)
 
+    def test_get_messages_timestamp(self):
+        '''
+        Check that the before and after are working in get_messages.
+        '''
+        # Two messages in room id 1
+        print '(' + self.test_get_messages_length.__name__ + ')', \
+            self.test_get_messages_length.__doc__
+        messages = self.connection.get_messages(room_id=1, before=NO_MESSAGES_BEFORE)
+        self.assertIsNone(messages)
+        messages = self.connection.get_messages(room_id=1, after=NO_MESSAGES_AFTER)
+        self.assertIsNone(messages)
+
     def test_delete_message(self):
         '''
-        Test that only the intended message is deleted.
+        Test that the intended message is deleted.
         '''
         print '(' + self.test_delete_message.__name__ + ')', \
             self.test_delete_message.__doc__
@@ -235,11 +247,10 @@ class MessageDBAPITestCase(unittest.TestCase):
         # Check that the messages has been really deleted through a get
         resp2 = self.connection.get_message(MESSAGE1_ID)
         self.assertIsNone(resp2)
-        # TODO other messages remain unaffected
 
     def test_delete_message_malformedid(self):
         '''
-        Test that trying to delete message with id ='600' (string) raises an error
+        Test that trying to delete message with id ='msg-600' raises an error.
         '''
         print '(' + self.test_delete_message_malformedid.__name__ + ')', \
             self.test_delete_message_malformedid.__doc__
@@ -259,46 +270,35 @@ class MessageDBAPITestCase(unittest.TestCase):
 
     def test_create_message(self):
         '''
-        Test that a new message can be created
+        Test that a new message can be created.
         '''
         print '(' + self.test_create_message.__name__ + ')', \
             self.test_create_message.__doc__
-        message_id = self.connection.create_message(1, 1, 'Hello from the otter side.')
+        message_id = self.connection.create_message(NEW_MESSAGE['room_id'],
+                                                    NEW_MESSAGE['user_id'],
+                                                    NEW_MESSAGE['content'],
+                                                    NEW_MESSAGE['created'])
         self.assertIsNotNone(message_id)
-        # Get the expected modified message
-        new_message = {}
-        new_message['room_id'] = '1'
-        new_message['user_id'] = '1'
-        new_message['content'] = 'Hello from the otter side.'
-
         # Check that the messages has been really modified through a get
         resp2 = self.connection.get_message(message_id)
-        self.assertDictContainsSubset(new_message, resp2)
-
-        # Create two messages with the same content, different timestamps so should work
-        time.sleep(1)
-        message_id = self.connection.create_message(1, 1, 'Hello from the otter side.')
-        resp2 = self.connection.get_message(message_id)
-        self.assertDictContainsSubset(new_message, resp2)
-
-    def test_not_contains_message(self):
-        '''
-        Check if the database does not contain messages with id 200
-
-        '''
-        print '(' + self.test_contains_message.__name__ + ')', \
-            self.test_contains_message.__doc__
-        self.assertFalse(self.connection.contains_message(WRONG_MESSAGE_ID))
+        self.assertDictContainsSubset(NEW_MESSAGE, resp2)
 
     def test_contains_message(self):
         '''
         Check if the database contains messages with id 1 and 2
-
         '''
         print '(' + self.test_contains_message.__name__ + ')', \
             self.test_contains_message.__doc__
         self.assertTrue(self.connection.contains_message(MESSAGE1_ID))
         self.assertTrue(self.connection.contains_message(MESSAGE2_ID))
+
+    def test_contains_message_noexistingid(self):
+        '''
+        Check if the database does not contain messages with id 200
+        '''
+        print '(' + self.test_contains_message_noexistingid.__name__ + ')', \
+            self.test_contains_message_noexistingid.__doc__
+        self.assertFalse(self.connection.contains_message(WRONG_MESSAGE_ID))
 
 
 if __name__ == '__main__':

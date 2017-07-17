@@ -36,7 +36,7 @@ INSERT INTO room_users (id, room_id, user_id, joined) VALUES (2, 1, 2, 136201748
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (3, 1, 3, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (4, 1, 4, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (5, 1, 5, 1362017481);
-INSERT INTO room_users (id, room_id, user_id, joined) VALUES (6, 2, 1, 1362017481);
+INSERT INTO room_users (id, room_id, user_id, joined) VALUES (6, 5, 1, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (7, 2, 2, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (8, 2, 3, 1362017481);
 INSERT INTO room_users (id, room_id, user_id, joined) VALUES (9, 2, 4, 1362017481);
