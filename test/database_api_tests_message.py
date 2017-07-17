@@ -21,7 +21,6 @@ A messages' list consists of several message objects.
 
 import sqlite3
 import unittest
-import time
 
 from api import engine
 
