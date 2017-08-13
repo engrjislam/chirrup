@@ -360,6 +360,79 @@ class User(Resource):
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
 		
+    	
+    def put(self, userid):
+        """
+        Modify an existing user in the database.
+        """
+        # CHECK THAT USER EXISTS
+        if not g.con.contains_user(userid):
+            return create_error_response(400, "User does not exist",
+                                         "There is no a user with id %s" % userid
+                                         )
+
+        user = g.con.get_user(userid)
+										 
+        if JSON != request.headers.get("Content-Type", ""):
+            abort(415)
+        create_error_response(415, "Error", "Your content types be fail")
+        # PARSE THE REQUEST:
+        request_body = request.get_json(force=True)
+        if not request_body:
+            return create_error_response(415, "Unsupported Media Type",
+                                         "Use a JSON compatible format",
+                                         )
+        # Get the request body and serialize it to object
+        # We should check that the format of the request body is correct. Check
+        # That mandatory attributes are there.
+
+        # pick up nickname so we can check for conflicts
+        try:
+            nickname = request_body["nickname"]
+        except KeyError:
+            return create_error_response(400, "Nickname required!", "Please provide nickname in the request")
+
+        # Conflict if user already exist
+        if g.con.contains_nickname(nickname):
+            return create_error_response(409, "Nickname exists!", "Nickname %s already exists." % nickname)
+
+        # pick up rest of the optional fields
+        image = request_body.get("image", None)
+		
+        if image is None:
+            if user['image'] is not None:
+			    # user[image]='/images/image.jpg'
+				# so we need to extract 'image.jpg' from user['image'] 
+				# using python substring except '/images/' that is first 7 character
+                print user['image']
+                print user['image'][8:]
+                image = user['image'][8:]
+		
+        user = {
+					"public_profile": 
+						{
+							"nickname": nickname,
+							"image": image
+						},
+					"private_profile": 
+						{
+							"username": user['username'],
+                            "email": user['email']
+						}
+                }
+        
+        try:
+            user_id = g.con.modify_user(userid, user)
+            envelope = ChirrupObject(message='The user information is modified correctly.')
+            envelope.add_control('self', href=api.url_for(User, userid=userid))
+        except ValueError:
+            envelope = ChirrupObject(resource_url=api.url_for(User, userid=userid))
+            envelope.add_error(title='User does not exist', messages='User does not exist')
+
+        # CREATE RESPONSE AND RENDER
+        string_data = json.dumps(envelope)
+        return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+		
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
 api.add_resource(User, '/users/<int:userid>/', endpoint='user')
