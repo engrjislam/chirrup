@@ -303,7 +303,7 @@ class Users(Resource):
             return create_error_response(409, "Nickname exists!", "Nickname %s already exists." % nickname)
 
         # pick up rest of the optional fields
-        image = request_body.get("image", "")
+        image = request_body.get("image", None)
 		
         user = {"public_profile": {"nickname": nickname,
                                    "image": image},
