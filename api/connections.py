@@ -212,7 +212,6 @@ class Connection(object):
         return {
             'user_id': str(row['user_id']),
             'username': str(row['username']),
-            'image': str(row['image']),
             'email': str(row['email']),
             'status': str(row['status']),
             'created': str(row['created']),
@@ -267,6 +266,41 @@ class Connection(object):
 
         query = 'SELECT * from ? WHERE ? = ?'
         cursor.execute(query, (table, id_type, id))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        else:
+            return True
+
+    def _check_id(self, id):
+        '''
+        Checks if id possible to convert to int. Id must be positive.
+        :param id:
+        :return: id
+        :raise: ValueError if conversion not possible
+        '''
+        try:
+            id = int(id)
+        except:
+            raise ValueError
+        if id < 0:
+            raise ValueError
+        return id
+
+
+    def _is_exists(self, cursor, table, field, value):
+        # FUNCTION NOT USED YET
+        '''
+        Checks if e.g. user exists in a user-table. Id checks already done in the upper level.
+        :param connection.cursor(): current cursor object
+        :param string table: name of the table
+        :param string field: field of the table
+        :param string value: value to check
+        :return: True if id exists, False otherwise
+        '''
+		
+        query = "SELECT * from {} WHERE {} = ?".format(table, field)
+        cursor.execute(query, (value, ))
         row = cursor.fetchone()
         if row is None:
             return None
@@ -596,7 +630,8 @@ class Connection(object):
         row = cur.fetchone()
         if row is None:
             return None
-        return self._create_user_object(row)
+        #return self._create_user_object(row)
+        return self._user_object(row)
 
     def delete_user(self, user_id):
         '''
@@ -1265,6 +1300,39 @@ class Connection(object):
             return None
 
         return str(row['nickname'])
+    
+    def contains_username(self, username):
+        '''
+        Check whether username is exists or not.
+        '''
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        return self._is_exists(cur, table='user', field='username', value=username)
+		
+    def contains_email(self, email):
+        '''
+        Check whether email is exists or not.
+        '''
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        return self._is_exists(cur, table='user', field='email', value=email)
+	
+    def contains_nickname(self, nickname):
+        '''
+        Check whether email is exists or not.
+        '''
+
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        return self._is_exists(cur, table='user_profile', field='nickname', value=nickname)
 
     def get_room_name(self, room_id):
         '''
