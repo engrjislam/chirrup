@@ -425,13 +425,35 @@ class User(Resource):
             user_id = g.con.modify_user(userid, user)
             envelope = ChirrupObject(message='The user information is modified correctly.')
             envelope.add_control('self', href=api.url_for(User, userid=userid))
+            status_code = 204
         except ValueError:
             envelope = ChirrupObject(resource_url=api.url_for(User, userid=userid))
             envelope.add_error(title='User does not exist', messages='User does not exist')
+            status_code = 400
 
         # CREATE RESPONSE AND RENDER
         string_data = json.dumps(envelope)
+        #return Response(string_data, status_code, mimetype=MASON+";"+ERROR_PROFILE)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+		
+    def delete(self, userid):
+        """
+        Delete a user in the system.
+
+       : param int userid: user id of the required user.
+
+        RESPONSE STATUS CODE:
+         * If the user is deleted returns 204.
+         * If the nickname does not exist return 404
+        """
+
+        if g.con.delete_user(userid):
+            #envelope = ChirrupObject(message='The user was successfully deleted.')
+            #return envelope, 204
+            return "The user was successfully deleted.", 204
+        else:
+            # Send error message
+            return create_error_response(404, "Unknown user", "There is no user with id %s" % userid)
 		
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
