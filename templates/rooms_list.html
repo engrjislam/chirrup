@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Chirrup</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <script type="text/javascript" src="{{ url_for('static', filename='chirrup_client.js') }}"></script>
+</head>
+
+<body>
+
+<div class="jumbotron">
+    <h1 class="text-center" style="font-family: 'Chewy'">Rooms</h1>
+</div>
+
+<div class="row" style="padding-top: 30px">
+    <div class="col-md-3">
+
+        <ul style="list-style-type: none">
+
+        <img src="{{ url_for('static', filename='profile_pic.png') }}" alt="profile pic">
+        <h3>Test user</h3>
+
+
+
+            <li><a href="{{ url_for('profile') }}" class="btn btn-default">Go to profile</a></li>
+            <li>
+                <button type="button" class="btn btn-default">Log off</button>
+            </li>
+
+        </ul>
+
+    </div>
+
+    <div class="col-md-6">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th class="text-center">Room name</th>
+                <th width="10%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Gunnar's Room</td>
+                <td>
+                    <a href="../room" class="btn btn-info btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Join
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td>Huone 105</td>
+                <td>
+                    <a href="#" class="btn btn-info btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Join
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td>Random room</td>
+                <td>
+                    <a href="#" class="btn btn-info btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Join
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td>huone8765
+                <td>
+                    <a href="#" class="btn btn-info btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Join
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td>Join us</td>
+                <td>
+                    <a href="#" class="btn btn-info btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Join
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-3">
+
+    </div>
+</div>
+
+</body>
+</html>
