@@ -151,7 +151,7 @@ class ChirrupObject(MasonObject):
 		
     def add_control_add_user(self):
         """
-        This adds the add-user control to an object. Intended ffor the 
+        This adds the add-user control to an object. Intended for the 
         document object. Instead of adding a schema dictionary we are pointing
         to a schema url instead for two reasons: 1) to demonstrate both options;
         2) the user schema is relatively large.
@@ -159,6 +159,19 @@ class ChirrupObject(MasonObject):
 
         self["@controls"]["add-user"] = {
             "href": api.url_for(Users),
+            "method": "POST"
+        }
+		
+    def add_control_add_room(self):
+        """
+        This adds the add-room control to an object. Intended for the 
+        document object. Instead of adding a schema dictionary we are pointing
+        to a schema url instead for two reasons: 1) to demonstrate both options;
+        2) the user schema is relatively large.
+        """
+
+        self["@controls"]["add-room"] = {
+            "href": api.url_for(Rooms),
             "method": "POST"
         }
 
@@ -223,9 +236,9 @@ class Users(Resource):
 
     def get(self):
         '''
-        Gets a list of all the users in the database.
+        Gets a list of all the rooms from the database.
         '''
-        #Create the messages list
+        #Create the users list
         users_db = g.con.get_users()
         
         #FILTER AND GENERATE THE RESPONSE
@@ -256,7 +269,7 @@ class Users(Resource):
 
     def post(self):
         """
-        Adds a new user in the database.
+        Add a new user in the database.
         """
 
         if JSON != request.headers.get("Content-Type", ""):
@@ -454,10 +467,154 @@ class User(Resource):
         else:
             # Send error message
             return create_error_response(404, "Unknown user", "There is no user with id %s" % userid)
+
+class Rooms(Resource):
+
+    def get(self):
+        '''
+        Gets a list of all the rooms from the database.
+        '''
+        #Create the rooms list
+        rooms_db = g.con.get_rooms()
+        
+        #FILTER AND GENERATE THE RESPONSE
+        #Create the envelope
+        envelope = ChirrupObject()
+
+        envelope.add_control_add_room()                                                            
+        envelope.add_control("self", href=api.url_for(Rooms))
+
+        items = envelope["rooms-all"] = []
+
+        for room in rooms_db:
+            item = ChirrupObject(
+                room_id=room["room_id"],
+                name=room["name"],
+                admin=room["admin"],
+                created=room["created"],
+                updated=room["updated"]
+            )
+            item.add_control("self", href=api.url_for(Room, roomid=room["room_id"]))
+            items.append(item)
+        
+        #RENDER
+        return envelope, 200
 		
+    def post(self):
+        """
+        Add a new user in the database.
+        """
+
+        if JSON != request.headers.get("Content-Type", ""):
+            abort(415)
+        create_error_response(415, "Error", "Your content types be fail")
+        # PARSE THE REQUEST:
+        request_body = request.get_json(force=True)
+        if not request_body:
+            return create_error_response(415, "Unsupported Media Type",
+                                         "Use a JSON compatible format",
+                                         )
+        # Get the request body and serialize it to object
+        # We should check that the format of the request body is correct. Check
+        # That mandatory attributes are there.
+
+        # pick up username so we can check for conflicts		
+        try:
+            name = request_body["name"]
+        except KeyError:
+            return create_error_response(400, "Room name required!", "Please provide room name in the request")
+
+        # Conflict if user already exist
+        if g.con.contains_room_name(name):
+            return create_error_response(409, "Room name exists!", "Room name %s already exists." % name)
+		
+        # pick up admin
+        try:
+            admin = request_body["admin"]
+        except KeyError:
+            return create_error_response(400, "Admin id required!", "Please provide admin's in the request")
+			
+        # check wheather admin exist or not
+        if g.con.get_user_nickname(admin) is None:
+            return create_error_response(409, "No admin exists!", "No admin found with id %s." % admin)
+		
+        # pick up type
+        try:
+            type = request_body["type"]
+        except KeyError:
+            return create_error_response(400, "Type id required!", "Please provide type in the request")
+			
+        # check wheather admin exist or not
+        if type not in ['PUBLIC', 'PRIVATE']:
+            return create_error_response(409, "Invalid room type!", "Room type '%s' is not correct. It should be either 'PUBLIC' of 'PRIVATE'." % type)
+
+        try:
+            room_id = g.con.create_room(name, type, admin)
+        except ValueError:
+            return create_error_response(400, "Wrong request format",
+                                         "Be sure you include all"
+                                         " mandatory properties"
+                                         )
+
+        # CREATE RESPONSE AND RENDER
+        return Response(status=201, headers={"Location": api.url_for(Room, roomid=room_id)})
+
+class Room(Resource):
+    """
+    Room Resource.
+    """
+
+    def get(self, roomid):
+        """
+        Get basic information of a room.
+        """
+
+        room = g.con.get_room(roomid)
+
+        if room is None:
+		    # if user not found
+            return resource_not_found(404)
+		
+        envelope = ChirrupObject()
+
+        item = ChirrupObject(
+            room_id=room["room_id"],
+            name=room["name"],
+            admin=room["admin"],
+            created=room["created"],
+            updated=room["updated"]
+        )
+        item.add_control("self", href=api.url_for(Room, roomid=roomid))
+        item.add_control("rooms", href=api.url_for(Rooms))
+        envelope['rooms-info'] = item
+
+        string_data = json.dumps(envelope)
+        return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+		
+    def delete(self, roomid):
+        """
+        Delete a room from the system.
+
+       : param int roomid: room id of the required room to be deleted.
+
+        RESPONSE STATUS CODE:
+         * If the room is deleted returns 204.
+         * If the room does not exist return 404
+        """
+
+        if g.con.delete_room(roomid):
+            #envelope = ChirrupObject(message='The user was successfully deleted.')
+            #return envelope, 204
+            return "The room was successfully deleted.", 204
+        else:
+            # Send error message
+            return create_error_response(404, "Unknown room", "There is no room with id %s" % roomid)
+			
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
 api.add_resource(User, '/users/<int:userid>/', endpoint='user')
+api.add_resource(Rooms, '/rooms/', endpoint='rooms')
+api.add_resource(Room, '/rooms/<int:roomid>/', endpoint='room')
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY

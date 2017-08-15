@@ -246,6 +246,7 @@ class Connection(object):
             updated = str(row['updated'])
 
         return {
+            'room_id': str(row['room_id']),
             'name': str(row['name']),
             'type': str(row['type']),
             'admin': str(row['admin']),
@@ -289,7 +290,6 @@ class Connection(object):
 
 
     def _is_exists(self, cursor, table, field, value):
-        # FUNCTION NOT USED YET
         '''
         Checks if e.g. user exists in a user-table. Id checks already done in the upper level.
         :param connection.cursor(): current cursor object
@@ -1496,3 +1496,15 @@ class Connection(object):
         :return: True if the room is in the database. False otherwise
         '''
         return self.get_room_name(room_id) is not None
+		
+    def contains_room_name(self, name):
+        '''
+        Check wheather a room exixts or not.
+        :param string name: name of the room
+        :return: True if room name is exists in the database else None
+        '''
+        # Init
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        return self._is_exists(cur, table='room', field='name', value=name)
