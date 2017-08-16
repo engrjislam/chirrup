@@ -741,6 +741,39 @@ class Message(Resource):
             # Send error message
             return create_error_response(404, "Unknown message", "There is no meesage with id %s" % roomid)
 		
+class Members(Resource):
+
+    def get(self, roomid):
+        '''
+        Gets a list of all the rooms from the database.
+        '''
+        room = g.con.get_room(roomid)
+        if room is None:
+            return resource_not_found(404)
+			
+        #Create the rooms list
+        members_db = g.con.get_members(room_id=roomid)
+        
+        #FILTER AND GENERATE THE RESPONSE
+        #Create the envelope
+        envelope = ChirrupObject()                                                       
+        envelope.add_control("self", href=api.url_for(Members, roomid=roomid))
+
+        items = envelope["room-members"] = []
+		
+        if members_db:
+            for member in members_db:
+                item = ChirrupObject(
+                    id=member["id"],
+                    room_id=member["user_id"],
+                    user_id=member["user_id"],
+                    joined=member["joined"]
+                )
+                #item.add_control("self", href=api.url_for(Message, messageid=message["message_id"]))
+                items.append(item)
+        
+        #RENDER
+        return envelope, 200
 		
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
@@ -749,6 +782,7 @@ api.add_resource(Rooms, '/rooms/', endpoint='rooms')
 api.add_resource(Room, '/rooms/<int:roomid>/', endpoint='room')
 api.add_resource(Messages, '/rooms/<int:roomid>/messages/', endpoint='messages')
 api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
+api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY

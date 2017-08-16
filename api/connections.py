@@ -254,6 +254,30 @@ class Connection(object):
             'created': str(row['created']),
             'updated': updated
         }
+		
+    def _create_room_users_object(self, row):
+        '''
+        It takes a database Row and transform it into a python dictionary.
+
+        :param row: The row obtained from the database.
+        :type row: sqlite3.Row
+        :return: a dictionary with the following keys:
+
+            * ``id``: id of the room_users
+            * ``room_id``: room id from a `room`
+            * ``user_id``: user id from a `user`
+            * ``joined``: when the user was joined, UNIX timestamp (long integer)
+
+            Note that all values are string if they are not otherwise indicated.
+
+        '''
+
+        return {
+            'id': str(row['id']),
+            'room_id': str(row['room_id']),
+            'user_id': str(row['user_id']),
+            'joined': str(row['joined'])
+        }
 
     def _check_if_exists(self, cursor, id, id_type, table):
         # FUNCTION NOT USED YET
@@ -1246,6 +1270,114 @@ class Connection(object):
 
         return rooms
 
+    def get_members(self, room_id, number_of_members=-1, before=-1, after=-1):
+        '''
+        Get the list of all the room member from the database filtered by the
+        conditions provided in the parameters.
+
+        :param room_id: default -1. If the room id sets then it will return all 
+            the members of a room. If not room id is not set then it will return 
+            all members from all rooms.
+        :type room_id: int			
+        :param number_of_members: default -1. Sets the maximum number of
+            rows returning in the list. If set to -1, there is no limit.
+        :type number_of_rooms: int
+        :param before: All timestamps > ``before`` (UNIX timestamp) are removed.
+            If set to -1, this condition is not applied.
+        :type before: long
+        :param after: All timestamps < ``after`` (UNIX timestamp) are removed.
+            If set to -1, this condition is not applied.
+        :type after: long
+
+        :return: A list of messages. Each message is a dictionary containing
+            the following keys:
+
+            * ``id``: int
+            * ``room_id``: room_id where the message was sent to.
+            * ``user_id``: user_id of the message's author.
+            * ``joined``: UNIX timestamp (long int) that specifies when the
+                user was joined into that room.
+
+            Note that all values in the returned dictionary are string unless
+            otherwise stated.
+
+            None is returned if the room_id doesn't exist.
+
+        :raises ValueError: if ``before`` or ``after`` are not valid UNIX
+            timestamps or ``before`` > ``after`` or arguments type is not int.
+
+        '''
+		
+        # Check input parameters
+        if type(room_id) is not int:
+            raise ValueError
+			
+        room = self.get_room(room_id)
+        if room is None:
+            return room;
+
+        if type(number_of_members) is not int:
+            raise ValueError
+
+        if before != -1:
+            before = self._check_unix_timestamp(before)
+        if after != -1:
+            after = self._check_unix_timestamp(after)
+
+        if after!= -1 and before!= -1:
+            if after > before:
+                raise ValueError
+
+        # Initialization
+        self.set_foreign_keys_support()
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+
+        # Create the SQL Statement build the string depending on the existence
+        # of room_id, number_of_members, before and after arguments.
+        # query parameters are added dynamically based on the function parameters
+        params = (room_id,)
+        query = 'SELECT * FROM room_users WHERE room_id = ?'
+        # if parameters add where clause
+        if after != -1 or before != -1:
+            query += ' AND'
+            
+        # Before restriction
+        if before != -1:
+            # before is int
+            query += ' joined < ?'
+            params += (before, )
+        # After restriction
+        if after != -1:
+            if before != -1:
+                query += ' AND'
+                # after is int
+            query += ' joined > ?'
+            params += (after, )
+
+        # Order of results
+        query += ' ORDER BY joined DESC'
+
+        # Limit the number of rooms returned
+        if number_of_members > -1:
+            # number_of_members is int
+            query += ' LIMIT ?'
+            params += (number_of_members, )
+
+        # Execute main SQL Statement
+        cur.execute(query, params)
+        # Get results
+        rows = cur.fetchall()
+        if rows is None:
+            return None
+        # Build the return object
+        members = []
+        for row in rows:
+            member = self._create_room_users_object(row)
+            members.append(member)
+
+        return members
+		
     # UTILS
     # do we need or is it gonna be username or maybe email?
     def get_user_id(self, nickname):
