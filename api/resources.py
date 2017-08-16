@@ -12,15 +12,35 @@ Updated on 10.08.2017
 import time
 from datetime import datetime
 import json
-from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory
+from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory, render_template, session
 from flask.ext.restful import Resource, Api, abort
+from flask_socketio import SocketIO, emit, join_room, leave_room
+import jinja2
 
 from utils import RegexConverter
 import engine
 
 
+# Initialize app
+socketio = SocketIO()
+
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
+
+socketio.init_app(app)
+
 app.debug = True
+
+# Secret Key used for sessions
+#app.secret_key = '\x00-Gs\xdc\x05EP/\x0e\xc6=\x91\x03<i\x19qL:\\\xa0\xc4\xfb'
+
+# Set template folder
+my_loader = jinja2.ChoiceLoader([
+    app.jinja_loader,
+    jinja2.FileSystemLoader('/templates'),
+])
+app.jinja_loader = my_loader
+
 # Set the database Engine. In order to modify the database file (e.g. for
 # testing) provide the database path   app.config to modify the
 #database to be used (for instance for testing)
@@ -228,7 +248,7 @@ def connect_db():
 @app.teardown_request
 def close_connection(exc):
     ''' Closes the database connection
-        Check if the connection is created. It migth be exception appear before
+        Check if the connection is created. It might be exception appear before
         the connection is created.'''
     if hasattr(g, 'con'):
         g.con.close()
@@ -739,7 +759,7 @@ class Message(Resource):
             return "The message was successfully deleted.", 204
         else:
             # Send error message
-            return create_error_response(404, "Unknown message", "There is no meesage with id %s" % roomid)
+            return create_error_response(404, "Unknown message", "There is no message with id %s" % messageid)
 		
 class Members(Resource):
 
@@ -774,7 +794,7 @@ class Members(Resource):
         
         #RENDER
         return envelope, 200
-		
+
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
 api.add_resource(User, '/users/<int:userid>/', endpoint='user')
@@ -783,9 +803,59 @@ api.add_resource(Room, '/rooms/<int:roomid>/', endpoint='room')
 api.add_resource(Messages, '/rooms/<int:roomid>/messages/', endpoint='messages')
 api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
+#api.add_resource(Chat, '/rooms/<int:roomid>/chat/', endpoint='chat')
+
+
+@app.route('/rooms/<int:roomid>/chat/')
+def chat(roomid):
+    print('Chat loaded')
+    room_name = g.con.get_room_name(roomid)
+    print('room name: ', room_name)
+    if room_name is None:
+        return resource_not_found(404)
+    session['room_name'] = room_name
+    session['room_id'] = roomid
+    session['name'] = 'test'
+    return render_template('chat.html', room_name=room_name, room_id=roomid)
+
+
+# Socket IO events, dynamic namespaces not supported so common namespace '/chat' is used.
+# SocketIO rooms separate message broadcasting.
+@socketio.on('joined', namespace='/chat')
+def joined(message):
+    """Sent by clients when they enter a room.
+    A status message is broadcast to all people in the room."""
+    # load messages from db ??
+
+    room_id = session.get('room_id')
+    join_room(room_id)
+    emit('status', {'msg': session.get('name') + ' has entered the room ' + session.get('room_name')}, room=room_id)
+
+
+@socketio.on('text', namespace='/chat')
+def text(message):
+    """Sent by a client when the user entered a new message.
+    The message is sent to all people in the room."""
+    room = session.get('room')
+    room_id = session.get('room_id')
+    emit('message', {'msg': session.get('name') + ':' + message['msg']}, room=room_id)
+
+    # write message to db
+
+
+@socketio.on('left', namespace='/chat')
+def left(message):
+    """Sent by clients when they leave a room.
+    A status message is broadcast to all people in the room."""
+    room_id = session.get('room_id')
+    leave_room(room_id)
+    emit('status', {'msg': session.get('name') + ' has left the room ' + session.get('room_name')}, room=room_id)
+
+
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY
 if __name__ == '__main__':
     #Debug true activates automatic code reloading and improved error messages
-    app.run(debug=True)
+    #app.run(debug=True)
+    socketio.run(app)
