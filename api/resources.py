@@ -10,6 +10,7 @@ Updated on 10.08.2017
 
 # imports
 import time
+from datetime import datetime
 import json
 from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory
 from flask.ext.restful import Resource, Api, abort
@@ -502,7 +503,7 @@ class Rooms(Resource):
 		
     def post(self):
         """
-        Add a new user in the database.
+        Add a new room in the database.
         """
 
         if JSON != request.headers.get("Content-Type", ""):
@@ -572,7 +573,7 @@ class Room(Resource):
         room = g.con.get_room(roomid)
 
         if room is None:
-		    # if user not found
+		    # if room not found
             return resource_not_found(404)
 		
         envelope = ChirrupObject()
@@ -609,12 +610,145 @@ class Room(Resource):
         else:
             # Send error message
             return create_error_response(404, "Unknown room", "There is no room with id %s" % roomid)
+
+class Messages(Resource):
+
+    def get(self, roomid):
+        '''
+        Gets a list of all the rooms from the database.
+        '''
+        #Create the rooms list
+        messages_db = g.con.get_messages(roomid)
+        
+        #FILTER AND GENERATE THE RESPONSE
+        #Create the envelope
+        envelope = ChirrupObject()                                                       
+        envelope.add_control("self", href=api.url_for(Messages, roomid=roomid))
+
+        items = envelope["room-messages"] = []
+		
+        if messages_db:
+            for message in messages_db:
+                item = ChirrupObject(
+                    content=message["content"],
+                    sender=message["user_id"],
+                    timestamp=message["created"]
+                )
+                item.add_control("self", href=api.url_for(Message, messageid=message["message_id"]))
+                items.append(item)
+        
+        #RENDER
+        return envelope, 200
+		
+    def post(self, roomid):
+        """
+        Add a new message in the database.
+        """
+
+        if JSON != request.headers.get("Content-Type", ""):
+            abort(415)
+        create_error_response(415, "Error", "Your content types be fail")
+        # PARSE THE REQUEST:
+        request_body = request.get_json(force=True)
+        if not request_body:
+            return create_error_response(415, "Unsupported Media Type",
+                                         "Use a JSON compatible format",
+                                         )
+        # Get the request body and serialize it to object
+        # We should check that the format of the request body is correct. Check
+        # That mandatory attributes are there.
+		
+        # check wheather roomid exist or not
+        if g.con.get_room_name(roomid) is None:
+            return create_error_response(409, "No such room exists!", "No such room found with id %s." % roomid)
+		
+        # pick up sender
+        try:
+            sender = request_body["sender"]
+        except KeyError:
+            return create_error_response(400, "Sender id required!", "Please provide sender's in the request")
 			
+        # check wheather sender exist or not
+        if g.con.get_user_nickname(sender) is None:
+            return create_error_response(409, "No sender exists!", "No sender found with id %s." % sender)
+
+        # pick up content		
+        try:
+            content = request_body["content"]
+        except KeyError:
+            return create_error_response(400, "Content required!", "Please provide content in the request")
+		
+        timestamp = int(time.mktime(datetime.now().timetuple()))
+			
+        try:
+            message_id = g.con.create_message(roomid, sender, content, timestamp)
+        except ValueError:
+            return create_error_response(400, "Wrong request format",
+                                         "Be sure you include all"
+                                         " mandatory properties"
+                                         )
+
+        # CREATE RESPONSE AND RENDER
+        return Response(status=201, headers={"Location": api.url_for(Message, messageid=message_id)})
+
+class Message(Resource):
+    """
+    Room Resource.
+    """
+
+    def get(self, messageid):
+        """
+        Get basic information of a room.
+        """
+
+        message = g.con.get_message(messageid)
+
+        if message is None:
+		    # if message not found
+            return resource_not_found(404)
+		
+        envelope = ChirrupObject()
+
+        item = ChirrupObject(
+            message_id=message["message_id"],
+            room_id=message["room_id"],
+            sender=message["user_id"],
+            content=message["content"],
+            created=message["created"]
+        )
+        item.add_control("self", href=api.url_for(Message, messageid=message["message_id"]))
+        envelope['messages-info'] = item
+
+        string_data = json.dumps(envelope)
+        return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+		
+    def delete(self, messageid):
+        """
+        Delete a room from the system.
+
+       : param int roomid: room id of the required room to be deleted.
+
+        RESPONSE STATUS CODE:
+         * If the room is deleted returns 204.
+         * If the room does not exist return 404
+        """
+
+        if g.con.delete_message(messageid):
+            #envelope = ChirrupObject(message='The user was successfully deleted.')
+            #return envelope, 204
+            return "The message was successfully deleted.", 204
+        else:
+            # Send error message
+            return create_error_response(404, "Unknown message", "There is no meesage with id %s" % roomid)
+		
+		
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
 api.add_resource(User, '/users/<int:userid>/', endpoint='user')
 api.add_resource(Rooms, '/rooms/', endpoint='rooms')
 api.add_resource(Room, '/rooms/<int:roomid>/', endpoint='room')
+api.add_resource(Messages, '/rooms/<int:roomid>/messages/', endpoint='messages')
+api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY
