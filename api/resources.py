@@ -765,7 +765,7 @@ class Members(Resource):
             for member in members_db:
                 item = ChirrupObject(
                     id=member["id"],
-                    room_id=member["user_id"],
+                    room_id=roomid,
                     user_id=member["user_id"],
                     joined=member["joined"]
                 )
