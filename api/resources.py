@@ -15,6 +15,7 @@ import json
 from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory, render_template, session
 from flask.ext.restful import Resource, Api, abort
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_cors import CORS, cross_origin
 import jinja2
 
 from utils import RegexConverter
@@ -24,12 +25,15 @@ import engine
 # Initialize app
 socketio = SocketIO()
 
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
-
+app.config['CORS_HEADERS'] = 'Content-Type'
 socketio.init_app(app)
-
 app.debug = True
+# Allow cross-origin resources
+cors = CORS(app)
+#cors = CORS(app, resources={r"/*": {"origins": "http://localhost:port"}})
 
 # Secret Key used for sessions
 #app.secret_key = '\x00-Gs\xdc\x05EP/\x0e\xc6=\x91\x03<i\x19qL:\\\xa0\xc4\xfb'
@@ -803,10 +807,10 @@ api.add_resource(Room, '/rooms/<int:roomid>/', endpoint='room')
 api.add_resource(Messages, '/rooms/<int:roomid>/messages/', endpoint='messages')
 api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
-#api.add_resource(Chat, '/rooms/<int:roomid>/chat/', endpoint='chat')
 
 
 @app.route('/rooms/<int:roomid>/chat/')
+#@cross_origin()
 def chat(roomid):
     print('Chat loaded')
     room_name = g.con.get_room_name(roomid)
@@ -822,36 +826,43 @@ def chat(roomid):
 # Socket IO events, dynamic namespaces not supported so common namespace '/chat' is used.
 # SocketIO rooms separate message broadcasting.
 @socketio.on('joined', namespace='/chat')
-def joined(message):
+def joined(event_data):
     """Sent by clients when they enter a room.
     A status message is broadcast to all people in the room."""
-    # load messages from db ??
-
-    room_id = session.get('room_id')
+    # Probably a web token or some other authentication mechanism is also passed to identify users.
+    # Currently not yet implemented.
+    room_id = int(event_data["room_id"])
+    nickname = event_data["nickname"]
+    print(room_id, '', nickname)
     join_room(room_id)
-    emit('status', {'msg': session.get('name') + ' has entered the room ' + session.get('room_name')}, room=room_id)
+    emit('status', {'msg': nickname + ' has connected.'}, room=room_id)
+    # add user to online list
 
 
 @socketio.on('text', namespace='/chat')
-def text(message):
+def text(event_data):
     """Sent by a client when the user entered a new message.
     The message is sent to all people in the room."""
-    room = session.get('room')
-    room_id = session.get('room_id')
-    emit('message', {'msg': session.get('name') + ':' + message['msg']}, room=room_id)
+    room_id = int(event_data["room_id"])
+    nickname = event_data["nickname"]
+    print(room_id, '', nickname)
+    message = event_data["message"]
+    emit('message', {'msg': nickname + ':' + message}, room=room_id)
 
-    # write message to db
+    # write message to db, sql injection?
+    #g.con.create_message(room_id, user_id, message, timestamp)
 
 
 @socketio.on('left', namespace='/chat')
-def left(message):
+def left(event_data):
     """Sent by clients when they leave a room.
     A status message is broadcast to all people in the room."""
-    room_id = session.get('room_id')
+    room_id = int(event_data["room_id"])
+    nickname = event_data["nickname"]
+    print(room_id, '', nickname)
     leave_room(room_id)
-    emit('status', {'msg': session.get('name') + ' has left the room ' + session.get('room_name')}, room=room_id)
-
-
+    emit('status', {'msg': nickname + ' has disconnected.'}, room=room_id)
+    # remove from online list
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY
