@@ -15,7 +15,7 @@ import json
 from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory, render_template, session
 from flask.ext.restful import Resource, Api, abort
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import jinja2
 
 from utils import RegexConverter
@@ -27,7 +27,7 @@ socketio = SocketIO()
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
+#app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
 app.config['CORS_HEADERS'] = 'Content-Type'
 socketio.init_app(app)
 app.debug = True
@@ -809,8 +809,10 @@ api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
 
 
+
+# route for returning the chat template and setting up a session, not needd
+'''
 @app.route('/rooms/<int:roomid>/chat/')
-#@cross_origin()
 def chat(roomid):
     print('Chat loaded')
     room_name = g.con.get_room_name(roomid)
@@ -821,7 +823,7 @@ def chat(roomid):
     session['room_id'] = roomid
     session['name'] = 'test'
     return render_template('chat.html', room_name=room_name, room_id=roomid)
-
+'''
 
 # Socket IO events, dynamic namespaces not supported so common namespace '/chat' is used.
 # SocketIO rooms separate message broadcasting.
@@ -833,7 +835,7 @@ def joined(event_data):
     # Currently not yet implemented.
     room_id = int(event_data["room_id"])
     nickname = event_data["nickname"]
-    print(room_id, '', nickname)
+    #print(room_id, '', nickname)
     join_room(room_id)
     emit('status', {'msg': nickname + ' has connected.'}, room=room_id)
     # add user to online list
@@ -845,8 +847,8 @@ def text(event_data):
     The message is sent to all people in the room."""
     room_id = int(event_data["room_id"])
     nickname = event_data["nickname"]
-    print(room_id, '', nickname)
-    message = event_data["message"]
+    #print(room_id, '', nickname)
+    message = event_data["msg"]
     emit('message', {'msg': nickname + ':' + message}, room=room_id)
 
     # write message to db, sql injection?
@@ -859,7 +861,7 @@ def left(event_data):
     A status message is broadcast to all people in the room."""
     room_id = int(event_data["room_id"])
     nickname = event_data["nickname"]
-    print(room_id, '', nickname)
+    #print(room_id, '', nickname)
     leave_room(room_id)
     emit('status', {'msg': nickname + ' has disconnected.'}, room=room_id)
     # remove from online list
