@@ -241,7 +241,7 @@ def unknown_error(error):
 
 @app.before_request
 def connect_db():
-    '''Creates a database connection before the request is proccessed.
+    '''Creates a database connection before the request is processed.
 
     The connection is stored in the application context variable flask.g .
     Hence it is accessible from the request object.'''
@@ -810,7 +810,7 @@ api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
 
 
 
-# route for returning the chat template and setting up a session, not needd
+# route for returning the chat template and setting up a session, not needed
 '''
 @app.route('/rooms/<int:roomid>/chat/')
 def chat(roomid):
@@ -835,7 +835,19 @@ def joined(event_data):
     # Currently not yet implemented.
     room_id = int(event_data["room_id"])
     nickname = event_data["nickname"]
-    #print(room_id, '', nickname)
+    # Store user_id to server side session so that we don't need it fetch the id every time
+    #connect_db()
+    #user_id = g.con.get_user_id(nickname)
+    #close_connection(1)
+
+    #user_id = 1
+    #print('user_id: ', user_id)
+    #if user_id is None:
+        #return resource_not_found(404)
+    session['nickname'] = nickname
+    #session['used_id'] = user_id
+
+    print(room_id, '', nickname)
     join_room(room_id)
     emit('status', {'msg': nickname + ' has connected.'}, room=room_id)
     # add user to online list
@@ -846,13 +858,15 @@ def text(event_data):
     """Sent by a client when the user entered a new message.
     The message is sent to all people in the room."""
     room_id = int(event_data["room_id"])
-    nickname = event_data["nickname"]
+    nickname = session["nickname"]
+    #user_id = session["user_id"]
     #print(room_id, '', nickname)
     message = event_data["msg"]
     emit('message', {'msg': nickname + ':' + message}, room=room_id)
-
     # write message to db, sql injection?
-    #g.con.create_message(room_id, user_id, message, timestamp)
+    #connect_db()
+    #g.con.create_message(room_id, user_id, message, int(time.mktime(datetime.now().timetuple())))
+    #close_connection(1)
 
 
 @socketio.on('left', namespace='/chat')

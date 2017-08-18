@@ -13,6 +13,7 @@
             var room_id;
             var nickname;
             var user_id = 1;
+            var socket;
             // Start the promise chain
             //Promise.resolve().all([get_user_nickname(), get_one_room()]);
 
@@ -59,36 +60,38 @@
                     .then(get_one_room)
                     .then(function(data){
                             room_id = data;
-                    });
-                 var socket;
-                $(document).ready(function(){
-                    // Endpoint is the same for every message. Dynamic endpoints weren't supported.
-                    // Connects to route 'http://localhost:5000/rooms/1/chat/'
-                    //socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
-                    socket = io.connect('http://localhost:5000/chat');
-                    //console.log('http://localhost:5000/chat/');
+                    })
+                    .then(function(){
+                        $(document).ready(function(){
+                            // Endpoint is the same for every message. Dynamic endpoints weren't supported.
+                            // Connects to route 'http://localhost:5000/rooms/1/chat/'
+                            //socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
+                            socket = io.connect('http://localhost:5000/chat');
+                            //console.log('http://localhost:5000/chat/');
 
-                    socket.on('connect', function() {
-                        // socket.emit('foo', {key: value}) sends an foo event to connected route.
-                        socket.emit('joined', {room_id: room_id, nickname: nickname});
+                            socket.on('connect', function() {
+                                // socket.emit('foo', {key: value}) sends an foo event to connected route.
+                                console.log(room_id)
+                                socket.emit('joined', {room_id: room_id, nickname: nickname});
+                            });
+                            socket.on('status', function(data) {
+                                $('#chat').val($('#chat').val() + '<' + data.msg + '>\n');
+                                $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                            });
+                            socket.on('message', function(data) {
+                                $('#chat').val($('#chat').val() + data.msg + '\n');
+                                $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                            });
+                            $('#text').keypress(function(e) {
+                                var code = e.keyCode || e.which;
+                                if (code == 13) {
+                                    text = $('#text').val();
+                                    $('#text').val('');
+                                    socket.emit('text', {msg: text, room_id: room_id, nickname: nickname});
+                                }
+                            });
+                        });
                     });
-                    socket.on('status', function(data) {
-                        $('#chat').val($('#chat').val() + '<' + data.msg + '>\n');
-                        $('#chat').scrollTop($('#chat')[0].scrollHeight);
-                    });
-                    socket.on('message', function(data) {
-                        $('#chat').val($('#chat').val() + data.msg + '\n');
-                        $('#chat').scrollTop($('#chat')[0].scrollHeight);
-                    });
-                    $('#text').keypress(function(e) {
-                        var code = e.keyCode || e.which;
-                        if (code == 13) {
-                            text = $('#text').val();
-                            $('#text').val('');
-                            socket.emit('text', {msg: text, room_id: room_id, nickname: nickname});
-                        }
-                    });
-                });
             }
 
             function leave_room() {
