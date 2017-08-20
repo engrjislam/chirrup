@@ -15,50 +15,51 @@ const DEFAULT_DATATYPE = "json";
 
 
 
-var GLOBALS = {
-
-    room_id: room_id
-
-};
-
-var room_id;
 
 
 
-function getRooms(apiurl) {
+function get_room(apiurl){
     apiurl = apiurl || ENTRYPOINT;
-    $("#room_list").hide();
-    return $.ajax({
+    $.ajax({
         url: apiurl,
         dataType:DEFAULT_DATATYPE
-    }).always(function(){
-        //Remove old list of users
-        //clear the form data hide the content information(no selected)
-        $("#room_list").empty();
-      
-
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
-        } else {
-        	console.log("ei toimi");
         }
-        //Extract the users
-        rooms = data.items;
-        for (var i=0; i < rooms.length; i++){
-            var room = rooms[i];
-            //Extract the nickname by getting the data values. Once obtained
-            // the nickname use the method appendUserToList to show the user
-            // information in the UI.
-            appendUserToList(room["@controls"].self.href, room.name)
-        }
+        var room_url = data["@controls"].self.href;
+        var admin = data.admin;
+        var name =  data.name;
+        appendRoomToList(room_url, admin, name);
+        console.log("KMDSKFMSDKFMSDKFMSDKMFS");
 
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert("Cannot get information from message: "+ apiurl);
     });
+}
+
+function appendRoomToList(url, admin, name) {
+        
+    var $room = $("<div>").addClass('room').html(""+
+                        "<form action='"+url+"'>"+
+                        "   <div class='form_content'>"+
+                        "       <input type=text class='admin' value='"+admin+"' readonly='readonly'/>"+
+                        "       <div class='name'>"+name+"</div>"+
+                        "   </div>"+
+                        "   <div class='commands'>"+
+                        "        <input type='button' class='deleteButton deleteMessage' value='Delete'/>"+
+                        "   </div>" +
+                        "</form>"
+                    );
+    //Append to list
+    $("#rooms_list").append($room);
+
+
 }
 
 
 
-
-getRooms();
-
-
+get_room(ENTRYPOINT);
