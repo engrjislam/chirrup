@@ -253,16 +253,16 @@ class Users(Resource):
 
         for user in users_db:
             item = ChirrupObject(
-                user_id=user["user_id"],
-                username=user["username"],
-                email=user["email"],
-                status=user["status"],
-                created=user["created"],
-                updated=user["updated"],
-                nickname=user["nickname"],
-                image=user["image"]
+                user_id=g.con.get_user_id(user["public_profile"]["nickname"]),
+                username=user["private_profile"]["username"],
+                email=user["private_profile"]["email"],
+                status=user["private_profile"]["status"],
+                created=user["private_profile"]["created"],
+                updated=user["private_profile"]["updated"],
+                nickname=user["public_profile"]["nickname"],
+                image=user["public_profile"]["image"]
             )
-            item.add_control("self", href=api.url_for(User, userid=user["user_id"]))
+            item.add_control("self", href=api.url_for(User, userid=g.con.get_user_id(user["public_profile"]["nickname"])))
             items.append(item)
         
         #RENDER
@@ -358,14 +358,14 @@ class User(Resource):
         envelope.add_control("private-data", encoding='json', href=api.url_for(Users), method='GET', title='user\'s private data')
 
         item = ChirrupObject(
-            user_id=user["user_id"],
-            username=user["username"],
-            email=user["email"],
-            status=user["status"],
-            created=user["created"],
-            updated=user["updated"],
-            nickname=user["nickname"],
-            image=user["image"]
+            user_id=g.con.get_user_id(user["public_profile"]["nickname"]),
+            username=user["private_profile"]["username"],
+            email=user["private_profile"]["email"],
+            status=user["private_profile"]["status"],
+            created=user["private_profile"]["created"],
+            updated=user["private_profile"]["updated"],
+            nickname=user["public_profile"]["nickname"],
+            image=user["public_profile"]["image"]
         )
         item.add_control("self", href=api.url_for(User, userid=userid))
         item.add_control("user", href=api.url_for(Users))
@@ -489,13 +489,13 @@ class Rooms(Resource):
 
         for room in rooms_db:
             item = ChirrupObject(
-                room_id=room["room_id"],
+                room_id=g.con.get_room_id(room["name"]),
                 name=room["name"],
                 admin=room["admin"],
                 created=room["created"],
                 updated=room["updated"]
             )
-            item.add_control("self", href=api.url_for(Room, roomid=room["room_id"]))
+            item.add_control("self", href=api.url_for(Room, roomid=g.con.get_room_id(room["name"])))
             items.append(item)
         
         #RENDER
@@ -579,7 +579,7 @@ class Room(Resource):
         envelope = ChirrupObject()
 
         item = ChirrupObject(
-            room_id=room["room_id"],
+            room_id=roomid,
             name=room["name"],
             admin=room["admin"],
             created=room["created"],
