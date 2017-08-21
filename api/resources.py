@@ -489,13 +489,13 @@ class Rooms(Resource):
 
         for room in rooms_db:
             item = ChirrupObject(
-                room_id=room["room_id"],
+                room_id=g.con.get_room_id(room["name"]),
                 name=room["name"],
                 admin=room["admin"],
                 created=room["created"],
                 updated=room["updated"]
             )
-            item.add_control("self", href=api.url_for(Room, roomid=room["room_id"]))
+            item.add_control("self", href=api.url_for(Room, roomid=g.con.get_room_id(room["name"])))
             items.append(item)
         
         #RENDER
@@ -579,7 +579,7 @@ class Room(Resource):
         envelope = ChirrupObject()
 
         item = ChirrupObject(
-            room_id=room["room_id"],
+            room_id=roomid,
             name=room["name"],
             admin=room["admin"],
             created=room["created"],

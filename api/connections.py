@@ -213,7 +213,6 @@ class Connection(object):
             updated = str(row['updated'])
 
         return {
-            'room_id': str(row['room_id']),
             'name': str(row['name']),
             'type': str(row['type']),
             'admin': str(row['admin']),
