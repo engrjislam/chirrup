@@ -6,7 +6,7 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	<link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
-	<script type="text/javascript" src="{{ url_for('static', filename='chirrup_client.js') }}"></script>
+	<script type="text/javascript" src="static/chirrup_client.js"></script>
 	
 
 
@@ -35,7 +35,7 @@
 
 	<div class="row">
 		<div class="col-lg-4 col-lg-offset-4">
-			<p>Nickname:</p>
+			<p id="nickname">Nickname:</p>
 			<div class="input-group">
 
 				<input type="text" class="form-control" /> 
@@ -51,7 +51,7 @@
 <div class="container text-center" style="height: 100px;">
 	<div class="btn-group-vertical">
 		&nbsp; 
-		<a href="{{ url_for('rooms') }}" class="btn btn-default">Browse rooms</a>
+		<a href="rooms_list.html" class="btn btn-default">Browse rooms</a>
 		<button class="btn btn-default" type="button">Delete profile</button>
 		<button class="btn btn-default" type="button">Log off</button>
 	</div>
@@ -63,6 +63,8 @@
 
 
 </div>
+
+
 
 </body>
 </html>
