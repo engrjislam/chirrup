@@ -263,22 +263,6 @@ class Connection(object):
         else:
             return True
 
-    def _check_id(self, id):
-        '''
-        Checks if id possible to convert to int. Id must be positive.
-        :param id:
-        :return: id
-        :raise: ValueError if conversion not possible
-        '''
-        try:
-            id = int(id)
-        except:
-            raise ValueError
-        if id < 0:
-            raise ValueError
-        return id
-
-
     def _is_exists(self, cursor, table, field, value):
         '''
         Checks if e.g. user exists in a user-table. Id checks already done in the upper level.
@@ -1400,6 +1384,11 @@ class Connection(object):
     def contains_username(self, username):
         '''
         Check whether username is exists or not.
+        
+        :param string username: The unique identificate of the user.
+        :return: the database attribute username or None if ``username`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
@@ -1411,6 +1400,11 @@ class Connection(object):
     def contains_email(self, email):
         '''
         Check whether email is exists or not.
+
+        :param string email: The unique identificate of the user.
+        :return: the database attribute email or None if ``email`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
@@ -1422,6 +1416,11 @@ class Connection(object):
     def contains_nickname(self, nickname):
         '''
         Check whether email is exists or not.
+
+        :param string nickname: The unique identificate of the user.
+        :return: the database attribute nickname or None if ``nickname`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
@@ -1583,13 +1582,23 @@ class Connection(object):
 
     def contains_user(self, user_id):
         '''
-        :return: True if the user is in the database. False otherwise
+        Check whether a user is exists or not.
+
+        :param int user_id: The unique identificate of the user.
+        :return: the database attribute nickname or None if ``user_id`` does not exit.
+        :rtype: str
+
         '''
         return self.get_user_nickname(user_id) is not None
 
     def contains_room(self, room_id):
         '''
-        :return: True if the room is in the database. False otherwise
+        Check whether room is exists or not.
+
+        :param int room_id: The unique identificate of the room.
+        :return: the database attribute email or None if ``email`` does not exit.
+        :rtype: str
+
         '''
         return self.get_room_name(room_id) is not None
 		
