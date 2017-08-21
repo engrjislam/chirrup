@@ -141,7 +141,7 @@ class MasonObject(dict):
 
         self["@controls"][ctrl_name] = kwargs
 
-class ChirrupObject(MasonObject):    
+class ChirrupObject(MasonObject):
     """
     A convenience subclass of MasonObject that defines a bunch of shorthand 
     methods for inserting application specific objects into the document. This
@@ -173,7 +173,7 @@ class ChirrupObject(MasonObject):
             "href": api.url_for(Users),
             "title": "List users"
         }
-		
+
     def add_control_add_user(self):
         """
         This adds the add-user control to an object. Intended for the 
@@ -186,10 +186,23 @@ class ChirrupObject(MasonObject):
             "href": api.url_for(Users),
             "method": "POST"
         }
-		
+
+    def add_control_edit_user(self):
+        """
+        This adds the add-room control to an object. Intended for the
+        document object. Instead of adding a schema dictionary we are pointing
+        to a schema url instead for two reasons: 1) to demonstrate both options;
+        2) the user schema is relatively large.
+        """
+
+        self["@controls"]["edit-user"] = {
+            "href": api.url_for(Users),
+            "method": "PUT"
+        }
+
     def add_control_add_room(self):
         """
-        This adds the add-room control to an object. Intended for the 
+        This adds the add-room control to an object. Intended for the
         document object. Instead of adding a schema dictionary we are pointing
         to a schema url instead for two reasons: 1) to demonstrate both options;
         2) the user schema is relatively large.
@@ -199,6 +212,7 @@ class ChirrupObject(MasonObject):
             "href": api.url_for(Rooms),
             "method": "POST"
         }
+
 
 #ERROR HANDLERS
 
@@ -256,21 +270,22 @@ def close_connection(exc):
         the connection is created.'''
     if hasattr(g, 'con'):
         g.con.close()
-		
+
 class Users(Resource):
 
     def get(self):
         '''
-        Gets a list of all the rooms from the database.
+        Gets a list of all the users from the database.
         '''
         #Create the users list
         users_db = g.con.get_users()
-        
+
         #FILTER AND GENERATE THE RESPONSE
         #Create the envelope
         envelope = ChirrupObject()
 
-        envelope.add_control_add_user()                                                            
+        envelope.add_control_add_user()
+        envelope.add_control_edit_user()
         envelope.add_control("self", href=api.url_for(Users))
 
         items = envelope["users-all"] = []
@@ -288,7 +303,7 @@ class Users(Resource):
             )
             item.add_control("self", href=api.url_for(User, userid=user["user_id"]))
             items.append(item)
-        
+
         #RENDER
         return envelope, 200
 
@@ -319,7 +334,7 @@ class Users(Resource):
         # Conflict if user already exist
         if g.con.contains_username(username):
             return create_error_response(409, "Username exists!", "Username %s already exists." % username)
-		
+
         # pick up email so we can check for conflicts
         try:
             email = request_body["email"]
@@ -342,7 +357,7 @@ class Users(Resource):
 
         # pick up rest of the optional fields
         image = request_body.get("image", None)
-		
+
         user = {"public_profile": {"nickname": nickname,
                                    "image": image},
                 "private_profile": {"username": username,
@@ -359,7 +374,7 @@ class Users(Resource):
 
         # CREATE RESPONSE AND RENDER
         return Response(status=201, headers={"Location": api.url_for(User, userid=user_id)})
-		
+
 class User(Resource):
     """
     User Resource. Public and private profile are separate resources.
@@ -375,7 +390,7 @@ class User(Resource):
         if user is None:
 		    # if user not found
             return resource_not_found(404)
-		
+
         envelope = ChirrupObject()
 
         envelope.add_control("delete", href=api.url_for(User, userid=userid), method='DELETE')
@@ -397,8 +412,8 @@ class User(Resource):
 
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
-		
-    	
+
+
     def put(self, userid):
         """
         Modify an existing user in the database.
@@ -410,7 +425,7 @@ class User(Resource):
                                          )
 
         user = g.con.get_user(userid)
-										 
+
         if JSON != request.headers.get("Content-Type", ""):
             abort(415)
         create_error_response(415, "Error", "Your content types be fail")
@@ -436,29 +451,29 @@ class User(Resource):
 
         # pick up rest of the optional fields
         image = request_body.get("image", None)
-		
+
         if image is None:
             if user['image'] is not None:
 			    # user[image]='/images/image.jpg'
-				# so we need to extract 'image.jpg' from user['image'] 
+				# so we need to extract 'image.jpg' from user['image']
 				# using python substring except '/images/' that is first 7 character
                 print user['image']
                 print user['image'][8:]
                 image = user['image'][8:]
-		
+
         user = {
-					"public_profile": 
+					"public_profile":
 						{
 							"nickname": nickname,
 							"image": image
 						},
-					"private_profile": 
+					"private_profile":
 						{
 							"username": user['username'],
                             "email": user['email']
 						}
                 }
-        
+
         try:
             user_id = g.con.modify_user(userid, user)
             envelope = ChirrupObject(message='The user information is modified correctly.')
@@ -473,7 +488,7 @@ class User(Resource):
         string_data = json.dumps(envelope)
         #return Response(string_data, status_code, mimetype=MASON+";"+ERROR_PROFILE)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
-		
+
     def delete(self, userid):
         """
         Delete a user in the system.
@@ -501,12 +516,12 @@ class Rooms(Resource):
         '''
         #Create the rooms list
         rooms_db = g.con.get_rooms()
-        
+
         #FILTER AND GENERATE THE RESPONSE
         #Create the envelope
         envelope = ChirrupObject()
 
-        envelope.add_control_add_room()                                                            
+        envelope.add_control_add_room()
         envelope.add_control("self", href=api.url_for(Rooms))
 
         items = envelope["rooms-all"] = []
@@ -521,10 +536,10 @@ class Rooms(Resource):
             )
             item.add_control("self", href=api.url_for(Room, roomid=room["room_id"]))
             items.append(item)
-        
+
         #RENDER
         return envelope, 200
-		
+
     def post(self):
         """
         Add a new room in the database.
@@ -552,23 +567,23 @@ class Rooms(Resource):
         # Conflict if user already exist
         if g.con.contains_room_name(name):
             return create_error_response(409, "Room name exists!", "Room name %s already exists." % name)
-		
+
         # pick up admin
         try:
             admin = request_body["admin"]
         except KeyError:
             return create_error_response(400, "Admin id required!", "Please provide admin's in the request")
-			
+
         # check wheather admin exist or not
         if g.con.get_user_nickname(admin) is None:
             return create_error_response(409, "No admin exists!", "No admin found with id %s." % admin)
-		
+
         # pick up type
         try:
             type = request_body["type"]
         except KeyError:
             return create_error_response(400, "Type id required!", "Please provide type in the request")
-			
+
         # check wheather admin exist or not
         if type not in ['PUBLIC', 'PRIVATE']:
             return create_error_response(409, "Invalid room type!", "Room type '%s' is not correct. It should be either 'PUBLIC' of 'PRIVATE'." % type)
@@ -599,7 +614,7 @@ class Room(Resource):
         if room is None:
 		    # if room not found
             return resource_not_found(404)
-		
+
         envelope = ChirrupObject()
 
         item = ChirrupObject(
@@ -615,7 +630,7 @@ class Room(Resource):
 
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
-		
+
     def delete(self, roomid):
         """
         Delete a room from the system.
@@ -643,14 +658,14 @@ class Messages(Resource):
         '''
         #Create the rooms list
         messages_db = g.con.get_messages(roomid)
-        
+
         #FILTER AND GENERATE THE RESPONSE
         #Create the envelope
-        envelope = ChirrupObject()                                                       
+        envelope = ChirrupObject()
         envelope.add_control("self", href=api.url_for(Messages, roomid=roomid))
 
         items = envelope["room-messages"] = []
-		
+
         if messages_db:
             for message in messages_db:
                 item = ChirrupObject(
@@ -660,10 +675,10 @@ class Messages(Resource):
                 )
                 item.add_control("self", href=api.url_for(Message, messageid=message["message_id"]))
                 items.append(item)
-        
+
         #RENDER
         return envelope, 200
-		
+
     def post(self, roomid):
         """
         Add a new message in the database.
@@ -681,17 +696,17 @@ class Messages(Resource):
         # Get the request body and serialize it to object
         # We should check that the format of the request body is correct. Check
         # That mandatory attributes are there.
-		
+
         # check wheather roomid exist or not
         if g.con.get_room_name(roomid) is None:
             return create_error_response(409, "No such room exists!", "No such room found with id %s." % roomid)
-		
+
         # pick up sender
         try:
             sender = request_body["sender"]
         except KeyError:
             return create_error_response(400, "Sender id required!", "Please provide sender's in the request")
-			
+
         # check wheather sender exist or not
         if g.con.get_user_nickname(sender) is None:
             return create_error_response(409, "No sender exists!", "No sender found with id %s." % sender)
@@ -701,9 +716,9 @@ class Messages(Resource):
             content = request_body["content"]
         except KeyError:
             return create_error_response(400, "Content required!", "Please provide content in the request")
-		
+
         timestamp = int(time.mktime(datetime.now().timetuple()))
-			
+
         try:
             message_id = g.con.create_message(roomid, sender, content, timestamp)
         except ValueError:
@@ -730,7 +745,7 @@ class Message(Resource):
         if message is None:
 		    # if message not found
             return resource_not_found(404)
-		
+
         envelope = ChirrupObject()
 
         item = ChirrupObject(
@@ -745,7 +760,7 @@ class Message(Resource):
 
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
-		
+
     def delete(self, messageid):
         """
         Delete a room from the system.
@@ -764,7 +779,7 @@ class Message(Resource):
         else:
             # Send error message
             return create_error_response(404, "Unknown message", "There is no message with id %s" % messageid)
-		
+
 class Members(Resource):
 
     def get(self, roomid):
@@ -774,17 +789,17 @@ class Members(Resource):
         room = g.con.get_room(roomid)
         if room is None:
             return resource_not_found(404)
-			
+
         #Create the rooms list
         members_db = g.con.get_members(room_id=roomid)
-        
+
         #FILTER AND GENERATE THE RESPONSE
         #Create the envelope
-        envelope = ChirrupObject()                                                       
+        envelope = ChirrupObject()
         envelope.add_control("self", href=api.url_for(Members, roomid=roomid))
 
         items = envelope["room-members"] = []
-		
+
         if members_db:
             for member in members_db:
                 item = ChirrupObject(
@@ -795,7 +810,7 @@ class Members(Resource):
                 )
                 #item.add_control("self", href=api.url_for(Message, messageid=message["message_id"]))
                 items.append(item)
-        
+
         #RENDER
         return envelope, 200
 
