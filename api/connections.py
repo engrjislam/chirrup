@@ -186,39 +186,6 @@ class Connection(object):
                 'created': str(row['created']),
                 'updated': updated}
         }
-		
-    def _user_object(self, row):
-        '''
-        It takes a database Row and transform it into a python dictionary.
-        
-        :param row: The row obtained from the database.
-        :type row: sqlite3.Row
-        :return: a dictionary with a list of users:
-        '''
-        
-        # if python None convert to NULL
-        # only ``updated`` possible to be NULL
-        if row['updated'] == None:
-            updated = 'NULL'
-        else:
-            updated = str(row['updated'])
-			
-		# image NULL or not
-        if row['image'] == None:
-            image = 'NULL'
-        else:
-            image = str('/images/' + row['image'])
-
-        return {
-            'user_id': str(row['user_id']),
-            'username': str(row['username']),
-            'email': str(row['email']),
-            'status': str(row['status']),
-            'created': str(row['created']),
-            'updated': updated,
-            'nickname': str(row['nickname']),
-            'image': image
-        }
 
     def _create_room_object(self, row):
         '''
@@ -616,8 +583,7 @@ class Connection(object):
         # Process the response.
         users = []
         for row in rows:
-            #users.append(self._create_user_object(row))
-			users.append(self._user_object(row))
+            users.append(self._create_user_object(row))
         return users
 
     def get_user(self, user_id):
@@ -654,8 +620,7 @@ class Connection(object):
         row = cur.fetchone()
         if row is None:
             return None
-        #return self._create_user_object(row)
-        return self._user_object(row)
+        return self._create_user_object(row)
 
     def delete_user(self, user_id):
         '''
