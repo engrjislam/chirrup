@@ -12,15 +12,29 @@ Updated on 10.08.2017
 import time
 from datetime import datetime
 import json
-from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory
+from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory, render_template, session
 from flask.ext.restful import Resource, Api, abort
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_cors import CORS
+import jinja2
 
 from utils import RegexConverter
 import engine
 
 
+# Initialize app
+socketio = SocketIO()
 app = Flask(__name__)
+app.config['CORS_HEADERS'] = 'Content-Type'
+socketio.init_app(app)
 app.debug = True
+# Allow cross-origin resources
+cors = CORS(app)
+#cors = CORS(app, resources={r"/*": {"origins": "http://localhost:port"}})
+
+# Secret Key used for sessions
+app.secret_key = '\x00-Gs\xdc\x05EP/\x0e\xc6=\x91\x03<i\x19qL:\\\xa0\xc4\xfb'
+
 # Set the database Engine. In order to modify the database file (e.g. for
 # testing) provide the database path   app.config to modify the
 #database to be used (for instance for testing)
@@ -217,19 +231,21 @@ def unknown_error(error):
 
 @app.before_request
 def connect_db():
-    '''Creates a database connection before the request is proccessed.
+    '''Creates a database connection before the request is processed.
 
     The connection is stored in the application context variable flask.g .
     Hence it is accessible from the request object.'''
-
+    print('opening db onnection')
     g.con = app.config['Engine'].connect()
 
 
 @app.teardown_request
 def close_connection(exc):
     ''' Closes the database connection
-        Check if the connection is created. It migth be exception appear before
+        Check if the connection is created. It might be exception appear before
         the connection is created.'''
+
+    print('closing db connection')
     if hasattr(g, 'con'):
         g.con.close()
 		
@@ -739,7 +755,7 @@ class Message(Resource):
             return "The message was successfully deleted.", 204
         else:
             # Send error message
-            return create_error_response(404, "Unknown message", "There is no meesage with id %s" % roomid)
+            return create_error_response(404, "Unknown message", "There is no message with id %s" % messageid)
 		
 class Members(Resource):
 
@@ -774,7 +790,7 @@ class Members(Resource):
         
         #RENDER
         return envelope, 200
-		
+
 #Define the routes
 api.add_resource(Users, '/users/', endpoint='users')
 api.add_resource(User, '/users/<int:userid>/', endpoint='user')
@@ -784,8 +800,86 @@ api.add_resource(Messages, '/rooms/<int:roomid>/messages/', endpoint='messages')
 api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
 
+
+# Socket IO events, dynamic namespaces not supported, so common namespace '/chat' is used.
+# SocketIO rooms separate message broadcasting.
+@socketio.on('joined', namespace='/chat')
+def joined(event_data):
+    """Sent by clients when they enter a room.
+    A status message is broadcast to all people in the room."""
+    # Probably a web token or some other authentication mechanism is also passed to identify users, which is
+    # currently not yet implemented.
+
+    room_name = event_data["room_name"]
+    nickname = event_data["nickname"]
+    print('room_name:', room_name)
+
+    g.con = app.config['Engine'].connect()
+
+    # Check that nickname and room exist
+    user_id = g.con.get_user_id(nickname)
+    if user_id is None:
+        # Send personal error message to user using unique session id
+        join_room(request.sid)
+        print('User doesn\'t exist')
+        emit('status', {'msg': 'Nickname' + nickname + ' doesn\'t exist'}, room=request.sid)
+        leave_room(request.sid)
+        return
+
+    room_id = g.con.get_room_id(room_name)
+    if room_id is None:
+        # Send personal error message to user using unique session id
+        join_room(request.sid)
+        #print('Room with id' + room_id + 'doesn\'t exist')
+        emit('status', {'msg': 'Room  ' + room_name + ' doesn\'t exist'}, room=request.sid)
+        leave_room(request.sid)
+        return
+
+    # Store user_id and nickname to server side session so that we don't need to fetch the id every time
+    #print('user_id: ', user_id)
+    session['nickname'] = nickname
+    session['user_id'] = user_id
+    session['room_id'] = room_id
+
+    #print(room_id, '', nickname)
+
+    join_room(room_name)
+    emit('status', {'msg': nickname + ' has connected.'}, room=room_name)
+
+    # add user to online list, not implemented
+
+
+@socketio.on('text', namespace='/chat')
+def text(event_data):
+    """Sent by a client when the user entered a new message.
+    The message is sent to all people in the room."""
+    room_name = event_data["room_name"]
+    nickname = session["nickname"]
+    user_id = session["user_id"]
+    room_id = session["room_id"]
+    #print(room_name, '', nickname)
+    message = event_data["msg"]
+    emit('message', {'msg': nickname + ':' + message}, room=room_name)
+    # write message to db, sql injection?
+    g.con = app.config['Engine'].connect()
+    g.con.create_message(room_id, user_id, message, int(time.mktime(datetime.now().timetuple())))
+    # db connection is closed automatically
+
+
+@socketio.on('left', namespace='/chat')
+def left(event_data):
+    """Sent by clients when they leave a room.
+    A status message is broadcast to all people in the room."""
+    room_name = event_data["room_name"]
+    nickname = session["nickname"]
+    #print(room_id, '', nickname)
+    leave_room(room_name)
+    emit('status', {'msg': nickname + ' has disconnected.'}, room=room_name)
+    # remove from online list, not implemented
+
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY
 if __name__ == '__main__':
     #Debug true activates automatic code reloading and improved error messages
-    app.run(debug=True)
+    #app.run(debug=True)
+    socketio.run(app)
