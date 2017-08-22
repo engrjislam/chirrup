@@ -1,6 +1,6 @@
 const SERVER_LOCATION = "http://localhost:5000";
 const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
-var DEBUG = true;
+var DEBUG = false;
 
 /**
  * Mason+JSON mime-type
