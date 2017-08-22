@@ -1,4 +1,4 @@
-const SERVER_LOCATION = "http://localhost:5000";
+const SERVER_LOCATION = "http://localhost:5000/api";
 const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
 var DEBUG = false;
 
@@ -36,6 +36,7 @@ function get_rooms(apiurl){
             var room_url = SERVER_LOCATION + room["@controls"].self.href;
 
             appendRoomToList(room_url, name);
+         
         }
 
                 var create_ctrl = data["@controls"]["add-room"];
@@ -292,7 +293,7 @@ function handleDeleteUser(event){
     delete_user(user_url);
 }
 
-/**
+
 
 
 function appendRoomToList(url, name) {
@@ -304,7 +305,7 @@ function appendRoomToList(url, name) {
     $("#roomlist").append($room);
 
 }
-
+/*
 function appendUserToList(url, name) {
 
     var $user2 = $('<tr><td><a href=' +url+ ' >' + name + '</a></td></tr>');
@@ -314,6 +315,8 @@ function appendUserToList(url, name) {
 
  */
 
+
+
  $(function(){
         $("#editUser").on("click", handleEditUser);
        // $("#deleteUser").on("click", handleDeleteUser);
@@ -321,8 +324,7 @@ function appendUserToList(url, name) {
         $("#user_info").on("click",".deleteUser",handleDeleteUser);
 
     });
-
-//get_rooms(ENTRYPOINT);
+get_rooms(ENTRYPOINT);
 //get_users("http://localhost:5000/users");
 get_user("http://localhost:5000/users/2");
 
