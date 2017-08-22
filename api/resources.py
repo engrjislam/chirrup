@@ -202,6 +202,21 @@ class ChirrupObject(MasonObject):
         "method": "PUT"
         }
 
+    def add_control_delete_user(self, nickname):
+        """
+        Adds the edit control to a public profile object. Editing a public
+        profile uses a limited version of the full user schema.
+
+        : param str nickname: nickname of the user whose profile is edited
+        """
+
+        self["@controls"]["delete"] = {
+        "href": api.url_for(User, userid=userid),
+        "title": "Delete this profile",
+        "encoding": "json",
+        "method": "DELETE"
+    }
+
     def add_control_add_room(self):
         """
         This adds the add-room control to an object. Intended for the
@@ -389,7 +404,7 @@ class User(Resource):
         user = g.con.get_user(userid)
 
         if user is None:
-		    # if user not found
+            # if user not found
             return resource_not_found(404)
 
         envelope = ChirrupObject()
@@ -410,7 +425,9 @@ class User(Resource):
             image=user["image"]
         )
         item.add_control("self", href=api.url_for(User, userid=userid))
+        item.add_control("delete", href=api.url_for(User, userid=userid))
         item.add_control("user", href=api.url_for(Users))
+
         envelope['users-info'] = item
 
         string_data = json.dumps(envelope)
@@ -615,7 +632,7 @@ class Room(Resource):
         room = g.con.get_room(roomid)
 
         if room is None:
-		    # if room not found
+            # if room not found
             return resource_not_found(404)
 
         envelope = ChirrupObject()
@@ -634,7 +651,7 @@ class Room(Resource):
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
 
-    def delete(self, roomid):
+    def delete_room(self, roomid):
         """
         Delete a room from the system.
 

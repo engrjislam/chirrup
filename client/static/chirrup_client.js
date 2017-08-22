@@ -149,6 +149,8 @@ function get_user(apiurl) {
         //delete(data.nickname);
         $("#image").val($user.image||"??");
 
+        $("#user_form").attr("action", apiurl);
+
         //Extract user information
         var user_links = data["@controls"];
         //Extracts urls from links. I need to get if the different links in the
@@ -178,6 +180,121 @@ function get_user(apiurl) {
     });
 }
 
+function delete_user(apiurl){
+    $.ajax({
+        url: apiurl,
+        type: "DELETE"
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("The user information has been deleted from the database");
+        //Update the list of users from the server.
+        get_users(ENTRYPOINT);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("The user information could not be deleted from the database. ");
+    });
+}
+
+function serializeFormTemplate($form){
+    var envelope={};
+    // get all the inputs into an array.
+    var $inputs = $form.find(".form_content input");
+    $inputs.each(function() {
+        envelope[this.id] = $(this).val();
+    });
+
+    var subforms = $form.find(".form_content .subform");
+    subforms.each(function() {
+
+        var data = {}
+
+        $(this).children("input").each(function() {
+            data[this.id] = $(this).val();
+        });
+
+        envelope[this.id] = data
+    });
+    return envelope;
+}
+
+function edit_user(apiurl, body){
+    $.ajax({
+        url: apiurl,
+        type: "PUT",
+        data:JSON.stringify(body),
+        processData:false,
+        contentType: PLAINJSON
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("User information have been modified successfully");
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        var error_message = $.parseJSON(jqXHR.responseText).message;
+        alert ("Could not modify user information;\r\n"+error_message);
+    });
+}
+
+function delete_user(apiurl){
+    $.ajax({
+        url: SERVER_LOCATION + apiurl,
+        type: "DELETE"
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("The user information has been deleted from the database");
+        //Update the list of users from the server.
+        getUsers();
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("The user information could not be deleted from the database. ");
+    });
+}
+
+/**
+ * Uses the API to create a new user with the form attributes in the present form.
+ *
+ * TRIGGER: #createUser
+ **/
+
+function handleEditUser(event){
+    if (DEBUG) {
+        console.log ("Triggered handleEditUser");
+    }
+    var $form = $(this).closest("form");
+    var body = serializeFormTemplate($form);
+    var url = $form.attr("action");
+    return false; //Avoid executing the default submit
+}
+
+function handleDeleteUser(event){
+    //Extract the url of the resource from the form action attribute.
+    if (DEBUG) {
+        console.log ("Triggered handleDeleteUser");
+    }
+
+    var user_url = $(this).closest("form").attr("action");
+    console.log("url: " + user_url);
+    delete_user(user_url);
+}
+
+/**
+
+
 function appendRoomToList(url, name) {
 
 
@@ -195,9 +312,19 @@ function appendUserToList(url, name) {
     $("#userslist").append($user2);
 }
 
+ */
+
+ $(function(){
+        $("#editUser").on("click", handleEditUser);
+       // $("#deleteUser").on("click", handleDeleteUser);
+
+        $("#user_info").on("click",".deleteUser",handleDeleteUser);
+
+    });
+
 //get_rooms(ENTRYPOINT);
 //get_users("http://localhost:5000/users");
-get_user("http://localhost:5000/users/1");
+get_user("http://localhost:5000/users/2");
 
 
 

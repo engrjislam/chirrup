@@ -1,71 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Profile page</title>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-	<link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
-	<script type="text/javascript" src="static/chirrup_client.js"></script>
-	
+    <title>Profile page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <script type="text/javascript" src="static/chirrup_client.js"></script>
 
 
 </head>
 <body>
 
 
-	<div class="text-center">
-		<h1 style="font-family: 'Chewy'; font-size:400%">Profile </h1>
-	</div>
-	<div class="text-center">
-		<img src="static/profile_pic.png" alt="profile pic">
-	</div>
-
-
-	<div style="padding-top: 30px">
-		
-
-	</div>
-
+<div class="text-center">
+    <h1 style="font-family: 'Chewy'; font-size:400%">Profile </h1>
+</div>
+<div class="text-center">
+    <img src="static/profile_pic.png" alt="profile pic">
 </div>
 
 
+<div style="padding-top: 30px">
 
-<div class="container"> 
 
-	<div class="row">
-		<div class="col-lg-4 col-lg-offset-4">
-			<p id="nickname">Nickname: </p>
-            <p id="username">Username: </p>
-			<div class="input-group">
+</div>
 
-				<input type="text" class="form-control" /> 
-				<span class="input-group-btn">
-					<button class="btn btn-default" type="button">Save changes</button>
+</div>
+
+<form id="user_form">
+
+    <div class="container">
+
+
+        <div class="row">
+            <div class="col-lg-4 col-lg-offset-4">
+                <p id="nickname">Nickname: </p>
+                <p id="username">Username: </p>
+                <div class="input-group">
+
+
+                    <input type="text" class="form-control"/>
+                    <span class="input-group-btn">
+					<button id="editUser" class="btn btn-default" type="button">Save changes</button>
 				</span>
-			</div>
-		</div>
-	</div>
-
-</div>
-
-<div class="container text-center" style="height: 100px;">
-	<div class="btn-group-vertical">
-		&nbsp; 
-		<a href="rooms_list.html" class="btn btn-default">Browse rooms</a>
-		<button class="btn btn-default" type="button">Delete profile</button>
-		<button class="btn btn-default" type="button">Create a new user</button>
-		<button class="btn btn-default" type="button">Log off</button>
-	</div>
-</div>
 
 
-</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="container text-center" style="height: 100px;">
+        <div id="user_info" class="btn-group-vertical">
+            &nbsp;
+            <a href="rooms_list.html" class="btn btn-default">Browse rooms</a>
+            <button class="btn btn-default deleteUser" type="button">Delete profile</button>
+            <button class="btn btn-default" type="button">Create a new user</button>
+            <button class="btn btn-default" type="button">Log off</button>
+        </div>
+    </div>
 
 
+    </div>
 
-</div>
-
+</form>
 
 
 </body>
