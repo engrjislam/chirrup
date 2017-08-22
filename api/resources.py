@@ -187,17 +187,19 @@ class ChirrupObject(MasonObject):
             "method": "POST"
         }
 
-    def add_control_edit_user(self):
+    def add_control_edit_user(self, nickname):
         """
-        This adds the add-room control to an object. Intended for the
-        document object. Instead of adding a schema dictionary we are pointing
-        to a schema url instead for two reasons: 1) to demonstrate both options;
-        2) the user schema is relatively large.
-        """
+        Adds the edit control to a public profile object. Editing a public
+        profile uses a limited version of the full user schema.
 
-        self["@controls"]["edit-user"] = {
-            "href": api.url_for(Users),
-            "method": "PUT"
+        : param str nickname: nickname of the user whose profile is edited
+         """
+
+        self["@controls"]["edit"] = {
+        "href": api.url_for(User, nickname=nickname),
+        "title": "Edit this profile",
+        "encoding": "json",
+        "method": "PUT"
         }
 
     def add_control_add_room(self):
@@ -284,8 +286,6 @@ class Users(Resource):
         #Create the envelope
         envelope = ChirrupObject()
 
-        envelope.add_control_add_user()
-        envelope.add_control_edit_user()
         envelope.add_control("self", href=api.url_for(Users))
 
         items = envelope["users-all"] = []
@@ -302,6 +302,7 @@ class Users(Resource):
                 image=user["image"]
             )
             item.add_control("self", href=api.url_for(User, userid=user["user_id"]))
+            item.add_control("edit-user", href=api.url_for(User, userid=user["user_id"]))
             items.append(item)
 
         #RENDER
@@ -394,7 +395,9 @@ class User(Resource):
         envelope = ChirrupObject()
 
         envelope.add_control("delete", href=api.url_for(User, userid=userid), method='DELETE')
+        envelope.add_control("edit-user", encoding='json', href=api.url_for(User, userid=userid), method='PUT')
         envelope.add_control("private-data", encoding='json', href=api.url_for(Users), method='GET', title='user\'s private data')
+
 
         item = ChirrupObject(
             user_id=user["user_id"],
