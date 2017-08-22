@@ -1,25 +1,11 @@
 // Global variables
-// user_id = 1 is assumed
-
-var GLOBALS = {
-    socket: socket,
-    room_id: room_id,
-    nickname: nickname,
-    user_id: user_id = 1
-};
-var socket;
 var nickname;
 var room_id;
 var user_id = 1;
 
-// Start the promise chain
-//Promise.resolve().all([get_user_nickname(), get_one_room()]);
-
 
 // Save data to sessionStorage if available.
-//
 // Saved data survives page reloads and moving between pages.
-//
 // Data is deleted when browser is closed. SessionStorage not used yet.
 if (typeof(Storage) !== 'undefined'  && 1===5) {
     // Select some room_id from list of possible rooms. User would probably pick one manually.
@@ -45,8 +31,7 @@ if (typeof(Storage) !== 'undefined'  && 1===5) {
             // save the nickname to sessionStorage
             sessionStorage.setItem('nickname', nickname);
             return Promise.resolve();
-        })
-        .then(init_socket);
+        });
 } else {
     // Sorry! No Web Storage support..
     console.log('Web storage can\'t be used');
@@ -60,19 +45,7 @@ if (typeof(Storage) !== 'undefined'  && 1===5) {
             room_id = data;
             console.log('Room_id set:', room_id);
             return Promise.resolve();
-        })
-        .then(init_socket);
-
-}
-
-function leave_room() {
-    console.log(room_id, nickname);
-    socket.emit('left', {room_id: room_id, nickname: nickname}, function () {
-        socket.disconnect();
-        // redirect somewhere else or close the chat window
-        // window.location.replace('some_other_file.html');
-
-    });
+        });
 }
 
 function get_one_room() {
@@ -97,38 +70,6 @@ function get_user_nickname(user_id) {
             console.log(data);
             // example of getting a room from room_id
             resolve(data['users-info']['nickname']);
-        });
-    });
-}
-
-function init_socket() {
-    $(document).ready(function () {
-        console.log('socket init');
-        // Endpoint is the same for every message. Dynamic endpoints weren't supported.
-        // Connects to route 'http://localhost:5000/rooms/1/chat/'
-        //socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
-        socket = io.connect('http://localhost:5000/chat');
-        //console.log('http://localhost:5000/chat/');
-
-        socket.on('connect', function () {
-            // socket.emit('foo', {key: value}) sends an foo event to connected route.
-            socket.emit('joined', {room_id: room_id, nickname: nickname});
-        });
-        socket.on('status', function (data) {
-            $('#chat').val($('#chat').val() + '<' + data.msg + '>\n');
-            $('#chat').scrollTop($('#chat')[0].scrollHeight);
-        });
-        socket.on('message', function (data) {
-            $('#chat').val($('#chat').val() + data.msg + '\n');
-            $('#chat').scrollTop($('#chat')[0].scrollHeight);
-        });
-        $('#text').keypress(function (e) {
-            var code = e.keyCode || e.which;
-            if (code == 13) {
-                text = $('#text').val();
-                $('#text').val('');
-                socket.emit('text', {msg: text, room_id: room_id, nickname: nickname});
-            }
         });
     });
 }

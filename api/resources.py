@@ -24,10 +24,7 @@ import engine
 
 # Initialize app
 socketio = SocketIO()
-
-
 app = Flask(__name__)
-#app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
 app.config['CORS_HEADERS'] = 'Content-Type'
 socketio.init_app(app)
 app.debug = True
@@ -36,14 +33,7 @@ cors = CORS(app)
 #cors = CORS(app, resources={r"/*": {"origins": "http://localhost:port"}})
 
 # Secret Key used for sessions
-#app.secret_key = '\x00-Gs\xdc\x05EP/\x0e\xc6=\x91\x03<i\x19qL:\\\xa0\xc4\xfb'
-
-# Set template folder
-my_loader = jinja2.ChoiceLoader([
-    app.jinja_loader,
-    jinja2.FileSystemLoader('/templates'),
-])
-app.jinja_loader = my_loader
+app.secret_key = '\x00-Gs\xdc\x05EP/\x0e\xc6=\x91\x03<i\x19qL:\\\xa0\xc4\xfb'
 
 # Set the database Engine. In order to modify the database file (e.g. for
 # testing) provide the database path   app.config to modify the
@@ -245,7 +235,7 @@ def connect_db():
 
     The connection is stored in the application context variable flask.g .
     Hence it is accessible from the request object.'''
-
+    print('opening db onnection')
     g.con = app.config['Engine'].connect()
 
 
@@ -254,6 +244,8 @@ def close_connection(exc):
     ''' Closes the database connection
         Check if the connection is created. It might be exception appear before
         the connection is created.'''
+
+    print('closing db connection')
     if hasattr(g, 'con'):
         g.con.close()
 		
@@ -809,76 +801,81 @@ api.add_resource(Message, '/messages/<int:messageid>/', endpoint='message')
 api.add_resource(Members, '/rooms/<int:roomid>/members/', endpoint='members')
 
 
-
-# route for returning the chat template and setting up a session, not needed
-'''
-@app.route('/rooms/<int:roomid>/chat/')
-def chat(roomid):
-    print('Chat loaded')
-    room_name = g.con.get_room_name(roomid)
-    print('room name: ', room_name)
-    if room_name is None:
-        return resource_not_found(404)
-    session['room_name'] = room_name
-    session['room_id'] = roomid
-    session['name'] = 'test'
-    return render_template('chat.html', room_name=room_name, room_id=roomid)
-'''
-
-# Socket IO events, dynamic namespaces not supported so common namespace '/chat' is used.
+# Socket IO events, dynamic namespaces not supported, so common namespace '/chat' is used.
 # SocketIO rooms separate message broadcasting.
 @socketio.on('joined', namespace='/chat')
 def joined(event_data):
     """Sent by clients when they enter a room.
     A status message is broadcast to all people in the room."""
-    # Probably a web token or some other authentication mechanism is also passed to identify users.
-    # Currently not yet implemented.
-    room_id = int(event_data["room_id"])
+    # Probably a web token or some other authentication mechanism is also passed to identify users, which is
+    # currently not yet implemented.
+
+    room_name = event_data["room_name"]
     nickname = event_data["nickname"]
-    # Store user_id to server side session so that we don't need it fetch the id every time
-    #connect_db()
-    #user_id = g.con.get_user_id(nickname)
-    #close_connection(1)
+    print('room_name:', room_name)
 
-    #user_id = 1
+    g.con = app.config['Engine'].connect()
+
+    # Check that nickname and room exist
+    user_id = g.con.get_user_id(nickname)
+    if user_id is None:
+        # Send personal error message to user using unique session id
+        join_room(request.sid)
+        print('User doesn\'t exist')
+        emit('status', {'msg': 'Nickname' + nickname + ' doesn\'t exist'}, room=request.sid)
+        leave_room(request.sid)
+        return
+
+    room_id = g.con.get_room_id(room_name)
+    if room_id is None:
+        # Send personal error message to user using unique session id
+        join_room(request.sid)
+        #print('Room with id' + room_id + 'doesn\'t exist')
+        emit('status', {'msg': 'Room  ' + room_name + ' doesn\'t exist'}, room=request.sid)
+        leave_room(request.sid)
+        return
+
+    # Store user_id and nickname to server side session so that we don't need to fetch the id every time
     #print('user_id: ', user_id)
-    #if user_id is None:
-        #return resource_not_found(404)
     session['nickname'] = nickname
-    #session['used_id'] = user_id
+    session['user_id'] = user_id
+    session['room_id'] = room_id
 
-    print(room_id, '', nickname)
-    join_room(room_id)
-    emit('status', {'msg': nickname + ' has connected.'}, room=room_id)
-    # add user to online list
+    #print(room_id, '', nickname)
+
+    join_room(room_name)
+    emit('status', {'msg': nickname + ' has connected.'}, room=room_name)
+
+    # add user to online list, not implemented
 
 
 @socketio.on('text', namespace='/chat')
 def text(event_data):
     """Sent by a client when the user entered a new message.
     The message is sent to all people in the room."""
-    room_id = int(event_data["room_id"])
+    room_name = event_data["room_name"]
     nickname = session["nickname"]
-    #user_id = session["user_id"]
-    #print(room_id, '', nickname)
+    user_id = session["user_id"]
+    room_id = session["room_id"]
+    #print(room_name, '', nickname)
     message = event_data["msg"]
-    emit('message', {'msg': nickname + ':' + message}, room=room_id)
+    emit('message', {'msg': nickname + ':' + message}, room=room_name)
     # write message to db, sql injection?
-    #connect_db()
-    #g.con.create_message(room_id, user_id, message, int(time.mktime(datetime.now().timetuple())))
-    #close_connection(1)
+    g.con = app.config['Engine'].connect()
+    g.con.create_message(room_id, user_id, message, int(time.mktime(datetime.now().timetuple())))
+    # db connection is closed automatically
 
 
 @socketio.on('left', namespace='/chat')
 def left(event_data):
     """Sent by clients when they leave a room.
     A status message is broadcast to all people in the room."""
-    room_id = int(event_data["room_id"])
-    nickname = event_data["nickname"]
+    room_name = event_data["room_name"]
+    nickname = session["nickname"]
     #print(room_id, '', nickname)
-    leave_room(room_id)
-    emit('status', {'msg': nickname + ' has disconnected.'}, room=room_id)
-    # remove from online list
+    leave_room(room_name)
+    emit('status', {'msg': nickname + ' has disconnected.'}, room=room_name)
+    # remove from online list, not implemented
 
 #Start the application
 #DATABASE SHOULD HAVE BEEN POPULATED PREVIOUSLY
