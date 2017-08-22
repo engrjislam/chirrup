@@ -38,7 +38,7 @@ function get_rooms(apiurl){
             appendRoomToList(room_url, name);
         }
 
-                var create_ctrl = data["@controls"]["add-room"]                                                 
+                var create_ctrl = data["@controls"]["add-room"];
 
                 if (create_ctrl.schema) {
                     createFormFromSchema(create_ctrl.href, create_ctrl.schema, "new_room_form");
@@ -68,7 +68,7 @@ function get_rooms(apiurl){
 function get_users(apiurl){
     apiurl = "http://localhost:5000/users/";
     $.ajax({
-        url: "http://localhost:5000/users/",
+        url: "apiurl",
         dataType:DEFAULT_DATATYPE
     }).always(function(){
 
@@ -118,9 +118,9 @@ function get_users(apiurl){
 
 function get_user(apiurl) {
     return $.ajax({
-        url: "http://localhost:5000/users/<id>",
+        url: apiurl,
         dataType:DEFAULT_DATATYPE,
-        processData:false,
+        processData:false
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
@@ -139,25 +139,21 @@ function get_user(apiurl) {
 
           */
 
+        var $user = data["users-info"];
+        console.log("data: " + $user.email);
+
         //Fill basic information from the user_basic_form
-        $("#username").val(data.username);
-        delete(data.username);
-        $("#nickname").val(data.nickname);
-        delete(data.nickname);
-        $("#image").val(data.image||"??");
+        $("#username").append($user.username);
+        //delete(data.username);
+        $("#nickname").append($user.nickname || "??" );
+        //delete(data.nickname);
+        $("#image").val($user.image||"??");
 
         //Extract user information
         var user_links = data["@controls"];
         //Extracts urls from links. I need to get if the different links in the
         //response.
-        if ("private-data" in user_links) {
-            var private_profile_url = user_links["private-data"].href; //Restricted profile
-        }
-        if ("messages-history" in user_links){
-            var messages_url = user_links["messages-history"].href;
-            // cut out the optional query parameters. this solution is not pretty.
-            messages_url = messages_url.slice(0, messages_url.indexOf("{?"));
-        }
+
         if ("delete" in user_links)
             var delete_link = user_links["delete"].href; // User delete linke
         if ("edit" in user_links)
@@ -172,25 +168,13 @@ function get_user(apiurl) {
             $("#editUser").show();
         }
 
-        //Fill the user profile with restricted user profile. This method
-        // Will call also to the list of messages.
-        if (private_profile_url){
-            private_data(private_profile_url);
-        }
-        //Get the history link and ask for history.
-        if (messages_url){
-            messages_history(messages_url);
-        }
-
-
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
         //Show an alert informing that I cannot get info from the user.
         alert ("Cannot extract information about this user from the forum service.");
-        //Deselect the user from the list.
-        deselectUser();
+
     });
 }
 
@@ -211,8 +195,9 @@ function appendUserToList(url, name) {
     $("#userslist").append($user2);
 }
 
-get_rooms(ENTRYPOINT);
-get_users("http://localhost:5000/users");
+//get_rooms(ENTRYPOINT);
+//get_users("http://localhost:5000/users");
+get_user("http://localhost:5000/users/1");
 
 
 
