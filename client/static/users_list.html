@@ -20,7 +20,7 @@
 
         <ul style="list-style-type: none">
 
-        <img src="{{ url_for('static', filename='profile_pic.png') }}" onerror="this.onerror=null;this.src='static/profile_pic.png';" alt="profile pic">
+        <img src="profile_pic.png" alt="profile pic">
         <h3>Test user</h3>
 
             <li><a href="{{ url_for('profile') }}" class="btn btn-default">Go to profile</a></li>
@@ -47,4 +47,7 @@
 </div>
 
 </body>
+<script>
+    get_users("http://localhost:5000/api/users/");
+</script>
 </html>

@@ -67,9 +67,8 @@ function get_rooms(apiurl){
 }
 
 function get_users(apiurl){
-    apiurl = "http://localhost:5000/api/users/";
     $.ajax({
-        url: "apiurl",
+        url: apiurl,
         dataType:DEFAULT_DATATYPE
     }).always(function(){
 
@@ -88,25 +87,6 @@ function get_users(apiurl){
             var name =  user.nickname;
             var user_url = SERVER_LOCATION + user["@controls"].self.href;
             appendUserToList(user_url, name);
-        }
-
-        var create_ctrl = data["@controls"]["add-user"];
-
-        if (create_ctrl.schema) {
-            createFormFromSchema(create_ctrl.href, create_ctrl.schema, "new_user_form");
-        }
-        else if (create_ctrl.schemaUrl) {
-            $.ajax({
-                url: create_ctrl.schemaUrl,
-                dataType: DEFAULT_DATATYPE
-            }).done(function (data, textStatus, jqXHR) {
-                createFormFromSchema(create_ctrl.href, data, "new_user_form");
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                if (DEBUG) {
-                    console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
-                }
-                alert ("Could not fetch form schema.  Please, try again");
-            });
         }
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -180,6 +160,36 @@ function get_user(apiurl) {
     });
 }
 
+function add_user(apiurl,user){
+    var userData = JSON.stringify(user);
+    var nickname = user.nickname;
+    return $.ajax({
+        url: apiurl,
+        type: "POST",
+        //dataType:DEFAULT_DATATYPE,
+        data:userData,
+        processData:false,
+        contentType: PLAINJSON
+    }).always(function(){
+
+        console.log(userData);
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("User successfully added");
+        //Add the user to the list and load it.
+        $user = appendUserToList(jqXHR.getResponseHeader("Location"),nickname);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("Could not create new user:"+jqXHR.responseJSON.message);
+    });
+}
+
 function get_room(apiurl) {
     return $.ajax({
         url: apiurl,
@@ -204,7 +214,14 @@ function get_room(apiurl) {
 
         var $room = data["rooms-info"];
 
+        console.log($room);
+
+        //$("#room_name").empty().append($room.name);
+
+        console.log("This rooms name is: " + $room.name);
+
         $("#room_name").append($room.name);
+
         //delete(data.username);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -212,7 +229,7 @@ function get_room(apiurl) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
         //Show an alert informing that I cannot get info from the user.
-        alert ("Cannot extract information about this user from the forum service.");
+        alert ("Cannot extract information about this room from the forum service.");
 
     });
 }
@@ -220,11 +237,13 @@ function get_room(apiurl) {
 function serializeFormTemplate($form){
     var envelope={};
     // get all the inputs into an array.
-    var $inputs = $form.find(".form_content input");
+    var $inputs = $form.find("input");
     $inputs.each(function() {
         envelope[this.id] = $(this).val();
     });
 
+    console.log(envelope);
+    /*
     var subforms = $form.find(".form_content .subform");
     subforms.each(function() {
 
@@ -236,6 +255,7 @@ function serializeFormTemplate($form){
 
         envelope[this.id] = data
     });
+    */
     return envelope;
 }
 
@@ -317,7 +337,26 @@ function handleGetRoom(event){
     var $form = $(this).closest("form");
     var url = $form.attr("action");
     console.log("attr url: " + url);
-    get_room(url);
+    window.location.href = "index.html";
+
+    $( document ).ready(function() {
+
+        get_room(url);
+        console.log("hello");
+
+    });
+    return false; //Avoid executing the default submit
+}
+
+function handleCreateUser(event){
+    if (DEBUG) {
+        console.log ("Triggered handleCreateUser");
+    }
+    var $form = $(this).closest("form");
+    var template = serializeFormTemplate($form);
+    var url = $form.attr("action");
+    console.log(template);
+    add_user(url, template);
     return false; //Avoid executing the default submit
 }
 
@@ -331,15 +370,13 @@ function appendRoomToList(url, name) {
     $("#roomlist").append($room);
 
 }
-/*
+
 function appendUserToList(url, name) {
 
-    var $user2 = $('<tr><td><a href=' +url+ ' >' + name + '</a></td></tr>');
+    var $user = $('<tr><td><a href=' +url+ ' >' + name + '</a></td></tr>');
 
-    $("#userslist").append($user2);
+    $("#userslist").append($user);
 }
-
- */
 
 
 
