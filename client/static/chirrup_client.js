@@ -1,5 +1,5 @@
 const SERVER_LOCATION = "http://localhost:5000";
-const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
+const ENTRYPOINT = SERVER_LOCATION + "/api/rooms/";
 var DEBUG = true;
 
 /**
@@ -190,6 +190,36 @@ function add_user(apiurl,user){
     });
 }
 
+function add_room(apiurl,room){
+    var roomData = JSON.stringify(room);
+    var name = room.name;
+    return $.ajax({
+        url: apiurl,
+        type: "POST",
+        //dataType:DEFAULT_DATATYPE,
+        data:roomData,
+        processData:false,
+        contentType: PLAINJSON
+    }).always(function(){
+
+        console.log(roomData);
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("Room successfully added");
+        //Add the user to the list and load it.
+        $room = appendRoomToList(jqXHR.getResponseHeader("Location"),name);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("Could not create new room:"+jqXHR.responseJSON.message);
+    });
+}
+
 function get_room(apiurl) {
     return $.ajax({
         url: apiurl,
@@ -283,7 +313,7 @@ function edit_user(apiurl, body){
 
 function delete_user(apiurl){
     $.ajax({
-        url: SERVER_LOCATION + apiurl,
+        url: apiurl,
         type: "DELETE"
 
     }).done(function (data, textStatus, jqXHR){
@@ -299,6 +329,31 @@ function delete_user(apiurl){
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
         alert ("The user information could not be deleted from the database. ");
+    });
+}
+
+function delete_room(apiurl){
+    $.ajax({
+        url: SERVER_LOCATION + apiurl,
+        type: "DELETE"
+
+    }).always(function(){
+
+        console.log(apiurl);
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("The room information has been deleted from the database");
+        //Update the list of users from the server.
+        get_rooms();
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("The room information could not be deleted from the database. ");
     });
 }
 
@@ -327,6 +382,17 @@ function handleDeleteUser(event){
     var user_url = $(this).closest("form").attr("action");
     console.log("url: " + user_url);
     delete_user(user_url);
+}
+
+function handleDeleteRoom(event){
+    //Extract the url of the resource from the form action attribute.
+    if (DEBUG) {
+        console.log ("Triggered handleDeleteRoom");
+    }
+
+    var room_url = $(this).closest("form").attr("action");
+    console.log(room_url);
+    delete_room(room_url);
 }
 
 function handleGetRoom(event){
@@ -360,6 +426,18 @@ function handleCreateUser(event){
     return false; //Avoid executing the default submit
 }
 
+function handleCreateRoom(event){
+    if (DEBUG) {
+        console.log ("Triggered handleCreateRoom");
+    }
+    var $form = $(this).closest("form");
+    var template = serializeFormTemplate($form);
+    var url = $form.attr("action");
+    console.log(template);
+    add_room(url, template);
+    return false; //Avoid executing the default submit
+}
+
 
 function appendRoomToList(url, name) {
 
@@ -383,9 +461,7 @@ function appendUserToList(url, name) {
  $(function(){
         $("#editUser").on("click", handleEditUser);
        // $("#deleteUser").on("click", handleDeleteUser);
-
         $("#user_info").on("click",".deleteUser",handleDeleteUser);
-
         $("#roomlist").on("click", "a", handleGetRoom);
 
     });

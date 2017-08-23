@@ -1,56 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-	<title>Create a room</title>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-	<link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
-	<script type="text/javascript" src="chirrup_client.js"></script>
+    <title>Add user</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script type="text/javascript" src="chirrup_client.js"></script>
 
 </head>
 <body>
-	<div class="text-center">
-		<h1 style="font-family: 'Chewy'; font-size:400%">Create a new room </h1>
-	</div>
+
+<div class="text-center">
+    <h1 style="font-family: 'Chewy'; font-size:400%">Add user </h1>
+</div>
+<div class="text-center">
+    <img src="profile_pic.png" alt="profile pic">
+</div>
 
 
-	<div class="row" style="padding-top: 30px; padding-left: 30px;>
-		<div class="col-md-1">
-			<img src="profile_pic.png" alt="profile pic">
-			<h3>Test user</h3>
-
-			<a href="{{ url_for('profile') }}" class="btn btn-default">Go to profile</a>
-			 
-		</div>
-
-
-	</div>
-	<div class="row" style="padding-top: 30px; padding-left: 30px;" >
-		<div class="col-md-2">
-			<button type="button" class="btn btn-default">Log off</button>
-		</div>
-		<div class="col-md-8">
-			<div class="container">
-
-				<form>
-					<div class="form-group">
-						<label>Room's name:</label>
-						<input type="text" class="form-control">
-					</div>
-
-				</form>
-			</div>
-
-			<div align="center">  <button type="button" class="btn btn-default">Create</button> </div>
-
-		</div>
-
-	</div>
-
+<div style="padding-top: 30px">
 
 
 </div>
 
+
+<div class="container">
+
+    <form action="http://localhost:5000/api/rooms/">
+
+        <div class="row">
+            <div class="col-lg-4 col-lg-offset-5">
+                <p>Room name:</p>
+                <div class="input-group text-center">
+                    <input id="name" type="text" class="form-control"/>
+                    &nbsp;
+                </div>
+                <p>Room admin (id):</p>
+                <div class="input-group text-center">
+                    <input id="admin" type="number" class="form-control"/>
+                    &nbsp;
+                </div>
+                <p>Room type (PUBLIC/PRIVATE):</p>
+                <div class="input-group text-center">
+                    <input id="type" type="text" class="form-control"/>
+                    &nbsp;
+                </div>
+
+                <button id="createroom" class="btn btn-default" type="button">Create</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
 </body>
+
+<script>
+    $(document).ready(function () {
+        $("#createroom").on("click", handleCreateRoom);
+    });
+</script>
+
 </html>
