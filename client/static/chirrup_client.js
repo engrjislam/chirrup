@@ -1,6 +1,6 @@
-const SERVER_LOCATION = "http://localhost:5000/api";
+const SERVER_LOCATION = "http://localhost:5000";
 const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
-var DEBUG = false;
+var DEBUG = true;
 
 /**
  * Mason+JSON mime-type
@@ -36,7 +36,7 @@ function get_rooms(apiurl){
             var room_url = SERVER_LOCATION + room["@controls"].self.href;
 
             appendRoomToList(room_url, name);
-         
+
         }
 
                 var create_ctrl = data["@controls"]["add-room"];
@@ -67,7 +67,7 @@ function get_rooms(apiurl){
 }
 
 function get_users(apiurl){
-    apiurl = "http://localhost:5000/users/";
+    apiurl = "http://localhost:5000/api/users/";
     $.ajax({
         url: "apiurl",
         dataType:DEFAULT_DATATYPE
@@ -141,7 +141,6 @@ function get_user(apiurl) {
           */
 
         var $user = data["users-info"];
-        console.log("data: " + $user.email);
 
         //Fill basic information from the user_basic_form
         $("#username").append($user.username);
@@ -181,23 +180,40 @@ function get_user(apiurl) {
     });
 }
 
-function delete_user(apiurl){
-    $.ajax({
+function get_room(apiurl) {
+    return $.ajax({
         url: apiurl,
-        type: "DELETE"
+        dataType:DEFAULT_DATATYPE,
+        processData:false
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
-        alert ("The user information has been deleted from the database");
-        //Update the list of users from the server.
-        get_users(ENTRYPOINT);
+
+        /*
+
+         item = ChirrupObject(
+         room_id=room["room_id"],
+         name=room["name"],
+         admin=room["admin"],
+         created=room["created"],
+         updated=room["updated"]
+         )
+
+         */
+
+        var $room = data["rooms-info"];
+
+        $("#room_name").append($room.name);
+        //delete(data.username);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
-        alert ("The user information could not be deleted from the database. ");
+        //Show an alert informing that I cannot get info from the user.
+        alert ("Cannot extract information about this user from the forum service.");
+
     });
 }
 
@@ -293,14 +309,24 @@ function handleDeleteUser(event){
     delete_user(user_url);
 }
 
+function handleGetRoom(event){
 
+    if (DEBUG) {
+        console.log ("Triggered handleGetRoom");
+    }
+    var $form = $(this).closest("form");
+    var url = $form.attr("action");
+    console.log("attr url: " + url);
+    get_room(url);
+    return false; //Avoid executing the default submit
+}
 
 
 function appendRoomToList(url, name) {
 
 
     var $room = $('<tr><td>' + name + '</td> ' +
-        '<td><a href=' + url + ' class = "btn btn-info btn-sm"> <span class="glyphicon glyphicon-plus"></span> Join </a></td></tr>');
+        '<td><form id="joinRoom" action='+ url + ' >' + '<a href="index.html" class = "btn btn-info btn-sm"> <span class="glyphicon glyphicon-plus"></span> Join </a></form></td></tr>');
     //Append to list
     $("#roomlist").append($room);
 
@@ -323,10 +349,12 @@ function appendUserToList(url, name) {
 
         $("#user_info").on("click",".deleteUser",handleDeleteUser);
 
+        $("#roomlist").on("click", "a", handleGetRoom);
+
     });
-get_rooms(ENTRYPOINT);
+
 //get_users("http://localhost:5000/users");
-get_user("http://localhost:5000/users/2");
+//get_user("http://localhost:5000/api/users/2");
 
 
 
