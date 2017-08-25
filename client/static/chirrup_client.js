@@ -13,7 +13,7 @@ const PLAINJSON = "application/json";
 const DEFAULT_DATATYPE = "json";
 
 function get_rooms(apiurl){
-    apiurl = apiurl || ENTRYPOINT;
+    apiurl = ENTRYPOINT;
     $.ajax({
         url: apiurl,
         dataType:DEFAULT_DATATYPE
@@ -33,7 +33,7 @@ function get_rooms(apiurl){
             var room = rooms[i];
 
             var name =  room.name;
-            var room_url = SERVER_LOCATION + room["@controls"].self.href;
+            var room_url = room["@controls"].self.href;
 
             appendRoomToList(room_url, name);
 
@@ -123,9 +123,9 @@ function get_user(apiurl) {
         var $user = data["users-info"];
 
         //Fill basic information from the user_basic_form
-        $("#username").append($user.username);
+        $("#user_name").append($user.username);
         //delete(data.username);
-        $("#nickname").append($user.nickname || "??" );
+        $("#nick_name").append($user.nickname || "??" );
         //delete(data.nickname);
         $("#image").val($user.image||"??");
 
@@ -230,29 +230,14 @@ function get_room(apiurl) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        /*
-
-         item = ChirrupObject(
-         room_id=room["room_id"],
-         name=room["name"],
-         admin=room["admin"],
-         created=room["created"],
-         updated=room["updated"]
-         )
-
-         */
-
         var $room = data["rooms-info"];
 
-        console.log($room);
+        $("#room_name").empty().append($room.name);
 
-        //$("#room_name").empty().append($room.name);
+        var room_url = data["@controls"].self.href;
 
-        console.log("This rooms name is: " + $room.name);
+        get_members(room_url + "members/");
 
-        $("#room_name").append($room.name);
-
-        //delete(data.username);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -262,6 +247,61 @@ function get_room(apiurl) {
         alert ("Cannot extract information about this room from the forum service.");
 
     });
+}
+
+function get_members(apiurl) {
+    $.ajax({
+        url: apiurl,
+        dataType:DEFAULT_DATATYPE
+    }).always(function(){
+
+        $("#members_list").empty();
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("get_members: RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+
+        var members = data["room-members"];
+
+        for (i = 0; i < members.length; i++) {
+
+            var member = members[i];
+            var id =  member.id;
+            var user_url = "/api/users/" + id + "/";
+            list_names(user_url);
+        }
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert("Cannot get information from message: "+ apiurl);
+    });
+}
+
+function list_names(apiurl) {
+    return $.ajax({
+        url: apiurl,
+        dataType:DEFAULT_DATATYPE,
+        processData:false,
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+
+        var name = data ["users-info"].nickname;
+        appendMemberToList(name);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        //Show an alert informing that I cannot get info from the user.
+        alert ("Cannot extract information about this room from the forum service.");
+
+    });
+
 }
 
 function serializeFormTemplate($form){
@@ -310,6 +350,33 @@ function edit_user(apiurl, body){
         alert ("Could not modify user information;\r\n"+error_message);
     });
 }
+
+function edit_room(apiurl, body){
+    $.ajax({
+        url: apiurl,
+        type: "PUT",
+        data:JSON.stringify(body),
+        processData:false,
+        contentType: PLAINJSON
+    }).always(function(){
+
+        console.log(data);
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("Room information have been modified successfully");
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        var error_message = $.parseJSON(jqXHR.responseText).message;
+        alert ("Could not modify room information;\r\n"+error_message);
+    });
+}
+
 
 function delete_user(apiurl){
     $.ajax({
@@ -370,6 +437,11 @@ function handleEditUser(event){
     var $form = $(this).closest("form");
     var body = serializeFormTemplate($form);
     var url = $form.attr("action");
+
+    console.log(url);
+    console.log(body);
+
+    edit_user(url, body);
     return false; //Avoid executing the default submit
 }
 
@@ -414,6 +486,22 @@ function handleGetRoom(event){
     return false; //Avoid executing the default submit
 }
 
+function handleEditRoom(event){
+    if (DEBUG) {
+        console.log ("Triggered handleEditUser");
+    }
+    var $form = $(this).closest("form");
+    var body = serializeFormTemplate($form);
+    var url = $form.attr("action");
+
+    console.log(url);
+    console.log(body);
+
+    edit_room(url, body);
+    return false; //Avoid executing the default submit
+}
+
+
 function handleCreateUser(event){
     if (DEBUG) {
         console.log ("Triggered handleCreateUser");
@@ -456,10 +544,16 @@ function appendUserToList(url, name) {
     $("#userslist").append($user);
 }
 
+function appendMemberToList(name) {
+
+    var $member = $('<li>' + name + '</li>');
+
+    $("#members_list").append($member);
+}
+
 
 
  $(function(){
-        $("#editUser").on("click", handleEditUser);
        // $("#deleteUser").on("click", handleDeleteUser);
         $("#user_info").on("click",".deleteUser",handleDeleteUser);
         $("#roomlist").on("click", "a", handleGetRoom);

@@ -24,7 +24,7 @@
             </h3>
         </div>
         <div class="col-md-10 text-center">
-            <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"> ?? </h1>
+            <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"> </h1>
 
         </div>
         <div class="col-md-1">
@@ -96,9 +96,9 @@
         </div>
         <div class="col-md-2">
             <h3>
-                Rooms
+                Room members
             </h3>
-            <ul>
+            <ul id="members_list">
                 <li>
                     User
                 </li>
@@ -126,12 +126,46 @@
             </ul>
         </div>
     </div>
+
+    <div class="container">
+
+        <form action="/api/rooms/">
+
+            <div class="row">
+                <div class="col-lg-4 col-lg-offset-5">
+                    <p>Room name:</p>
+                    <div class="input-group text-center">
+                        <input id="name" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+                    <p>Room admin (id):</p>
+                    <div class="input-group text-center">
+                        <input id="admin" type="number" class="form-control"/>
+                        &nbsp;
+                    </div>
+                    <p>Room type (PUBLIC/PRIVATE):</p>
+                    <div class="input-group text-center">
+                        <input id="type" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <button id="editroom" class="btn btn-default" type="button">Save changes</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
 </div>
+
+<button id="deleteroom" class="btn btn-default" type="button">Delete</button>
 
 </body>
 
 <script>
-    $("#room_name").append($room.name || "insert room name");
+        get_room("/api/rooms/1/");
+        $("#deleteroom").on("click", handleDeleteRoom);
+        $("#editroom").on("click", handleEditRoom);
 </script>
 
 </html>
