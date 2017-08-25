@@ -190,6 +190,32 @@ class ChirrupObject(MasonObject):
             "method": "POST"
         }
 
+    def add_control_edit_user(self):
+        """
+        This adds the add-room control to an object. Intended for the
+        document object. Instead of adding a schema dictionary we are pointing
+        to a schema url instead for two reasons: 1) to demonstrate both options;
+        2) the user schema is relatively large.
+        """
+
+        self["@controls"]["edit-user"] = {
+            "href": api.url_for(User),
+            "method": "PUT"
+        }
+
+    def add_control_edit_room(self):
+        """
+        This adds the add-room control to an object. Intended for the
+        document object. Instead of adding a schema dictionary we are pointing
+        to a schema url instead for two reasons: 1) to demonstrate both options;
+        2) the user schema is relatively large.
+        """
+
+        self["@controls"]["edit-room"] = {
+            "href": api.url_for(Room),
+            "method": "PUT"
+        }
+
 #ERROR HANDLERS
 
 def create_error_response(status_code, title, message=None):
@@ -365,12 +391,13 @@ class User(Resource):
         user = g.con.get_user(userid)
 
         if user is None:
-		    # if user not found
+            # if user not found
             return resource_not_found(404)
 		
         envelope = ChirrupObject()
 
         envelope.add_control("delete", href=api.url_for(User, userid=userid), method='DELETE')
+        envelope.add_control("edit-user", href=api.url_for(User, userid=userid), method='PUT')
         envelope.add_control("private-data", encoding='json', href=api.url_for(Users), method='GET', title='user\'s private data')
 
         item = ChirrupObject(
@@ -383,7 +410,9 @@ class User(Resource):
             nickname=user["public_profile"]["nickname"],
             image=user["public_profile"]["image"]
         )
+
         item.add_control("self", href=api.url_for(User, userid=userid))
+        item.add_control("edit-user", href=api.url_for(User, userid=userid))
         item.add_control("user", href=api.url_for(Users))
         envelope['users-info'] = item
 
@@ -428,26 +457,27 @@ class User(Resource):
 
         # pick up rest of the optional fields
         image = request_body.get("image", None)
-		
+
+
         if image is None:
             if user['image'] is not None:
-			    # user[image]='/images/image.jpg'
-				# so we need to extract 'image.jpg' from user['image'] 
+                # user[image]='/images/image.jpg'
+                # so we need to extract 'image.jpg' from user['image']
 				# using python substring except '/images/' that is first 7 character
                 print user['image']
                 print user['image'][8:]
                 image = user['image'][8:]
 		
         user = {
-					"public_profile": 
+					"public_profile":
 						{
 							"nickname": nickname,
 							"image": image
 						},
 					"private_profile": 
 						{
-							"username": user['username'],
-                            "email": user['email']
+							"username": user["private_profile"]['username'],
+                            "email": user["private_profile"]['email']
 						}
                 }
         
@@ -589,10 +619,15 @@ class Room(Resource):
         room = g.con.get_room(roomid)
 
         if room is None:
-		    # if room not found
+            # if room not found
             return resource_not_found(404)
 		
         envelope = ChirrupObject()
+
+        envelope.add_control("self", href=api.url_for(Room, roomid=roomid), method='GET')
+        envelope.add_control("delete", href=api.url_for(Room, roomid=roomid), method='DELETE')
+        envelope.add_control("edit-room", href=api.url_for(Room, roomid=roomid), method='PUT')
+
 
         item = ChirrupObject(
             room_id=roomid,
@@ -601,6 +636,7 @@ class Room(Resource):
             created=room["created"],
             updated=room["updated"]
         )
+
         item.add_control("self", href=api.url_for(Room, roomid=roomid))
         item.add_control("rooms", href=api.url_for(Rooms))
         envelope['rooms-info'] = item
