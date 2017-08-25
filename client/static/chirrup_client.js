@@ -165,11 +165,8 @@ function get_messages(apiurl){
         for (i = max_messages; i < messages.length; i++) {
 
             var message = messages[i];
-            console.log(message.content);
-
-            //console.log(message);
-
             appendMessageToList(message.content, message.sender);
+            replaceIdWithName(message.sender);
 
         }
 
@@ -338,6 +335,39 @@ function list_sender(apiurl) {
 
         var name = data ["users-info"].nickname;
         appendSenderToList(name);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        //Show an alert informing that I cannot get info from the user.
+        alert ("Cannot extract information about this room from the forum service.");
+
+    });
+
+}
+
+function replaceIdWithName(id) {
+    return $.ajax({
+        url: "/api/users/" + id,
+        dataType:DEFAULT_DATATYPE,
+        processData:false,
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+
+        var name = data["users-info"].nickname;
+        $( ".sender_name" ).each(function( i ) {
+
+            console.log(id);
+            console.log($(this).html());
+
+            if($(this).html() == id) {
+                console.log("hello");
+                $(this).empty().append(name);
+            }
+        });
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -607,7 +637,7 @@ function appendMessageToList(content, sender) {
 
     //list_sender("/api/users/" + sender);
 
-    var message = ('<li class="chat_bubble" style="float: left; font-size: smaller"> Sender: ' + sender + '</li>');
+    var message = ('<li class="chat_bubble sender_name" style="float: left; font-size: smaller">' + sender + '</li>');
     message += ('<li class="chat_bubble chat_bubble-received">' + content + '</li>');
 
     $("#messages_list").append(message);
