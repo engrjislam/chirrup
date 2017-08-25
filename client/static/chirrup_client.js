@@ -13,7 +13,7 @@ const PLAINJSON = "application/json";
 const DEFAULT_DATATYPE = "json";
 
 function get_rooms(apiurl){
-    apiurl = ENTRYPOINT;
+    apiurl = apiurl || ENTRYPOINT;
     $.ajax({
         url: apiurl,
         dataType:DEFAULT_DATATYPE
@@ -547,17 +547,6 @@ function handleDeleteRoom(event){
     return false;
 }
 
-function handleGetRoom(event){
-
-    if (DEBUG) {
-        console.log ("Triggered handleGetRoom");
-    }
-    var $form = $(this).closest("form");
-    var url = $form.attr("action");
-
-    return false; //Avoid executing the default submit
-}
-
 function handleEditRoom(event){
     if (DEBUG) {
         console.log ("Triggered handleEditUser");
@@ -644,7 +633,6 @@ function appendMessageToList(content, sender) {
  $(function(){
        // $("#deleteUser").on("click", handleDeleteUser);
         $("#user_info").on("click",".deleteUser",handleDeleteUser);
-        $("#roomlist").on("click", "a", handleGetRoom);
 
     });
 
