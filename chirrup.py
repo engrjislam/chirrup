@@ -3,8 +3,8 @@ from werkzeug.wsgi import DispatcherMiddleware
 from api.resources import app as api
 from client.client import app as client
 
-application = DispatcherMiddleware(client, {
-    '/api': api
+application = DispatcherMiddleware(api, {
+    '/chirrup': client
 })
 if __name__ == '__main__':
     run_simple('localhost', 5000, application,

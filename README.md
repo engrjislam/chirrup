@@ -9,3 +9,6 @@ Run all the tests:
 
 Create database using sql_dump files. Removes database if it already exists.
 "python init_database.py"
+
+Run client and api:
+"python chirrup.py"

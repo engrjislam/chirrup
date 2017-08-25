@@ -1,5 +1,5 @@
 const SERVER_LOCATION = "http://localhost:5000";
-const ENTRYPOINT = SERVER_LOCATION + "/api/rooms/";
+const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
 var DEBUG = true;
 
 /**
@@ -287,7 +287,7 @@ function get_members(apiurl) {
 
             var member = members[i];
             var id =  member.id;
-            var user_url = "/api/users/" + id + "/";
+            var user_url = "/users/" + id + "/";
             list_names(user_url);
         }
 
@@ -349,7 +349,7 @@ function list_sender(apiurl) {
 
 function replaceIdWithName(id) {
     return $.ajax({
-        url: "/api/users/" + id,
+        url: "/users/" + id,
         dataType:DEFAULT_DATATYPE,
         processData:false,
     }).done(function (data, textStatus, jqXHR){
@@ -650,9 +650,5 @@ function appendMessageToList(content, sender) {
         $("#roomlist").on("click", "a", handleGetRoom);
 
     });
-
-//get_users("http://localhost:5000/users");
-//get_user("http://localhost:5000/api/users/2");
-
 
 
