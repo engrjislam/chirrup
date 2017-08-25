@@ -39,25 +39,6 @@ function get_rooms(apiurl){
 
         }
 
-                var create_ctrl = data["@controls"]["add-room"];
-
-                if (create_ctrl.schema) {
-                    createFormFromSchema(create_ctrl.href, create_ctrl.schema, "new_room_form");
-                }
-                else if (create_ctrl.schemaUrl) {
-                    $.ajax({
-                        url: create_ctrl.schemaUrl,
-                        dataType: DEFAULT_DATATYPE
-                    }).done(function (data, textStatus, jqXHR) {
-                        createFormFromSchema(create_ctrl.href, data, "new_room_form");
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        if (DEBUG) {
-                            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
-                        }
-                        alert ("Could not fetch form schema.  Please, try again");
-                    });
-                }
-
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
@@ -160,6 +141,46 @@ function get_user(apiurl) {
     });
 }
 
+function get_messages(apiurl){
+    $.ajax({
+        url: apiurl,
+        dataType:DEFAULT_DATATYPE
+    }).always(function(){
+
+        $("#messages_list").empty();
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("get_messages: RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+
+        var messages = data["room-messages"];
+        var max_messages;
+
+        if (messages.length < 10 ) {
+            max_messages = 0;
+        } else
+            max_messages = messages.length - 10;
+
+        for (i = max_messages; i < messages.length; i++) {
+
+            var message = messages[i];
+            console.log(message.content);
+
+            //console.log(message);
+
+            appendMessageToList(message.content, message.sender);
+
+        }
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert("Cannot get information from message: "+ apiurl);
+    });
+}
+
 function add_user(apiurl,user){
     var userData = JSON.stringify(user);
     var nickname = user.nickname;
@@ -237,6 +258,7 @@ function get_room(apiurl) {
         var room_url = data["@controls"].self.href;
 
         get_members(room_url + "members/");
+        get_messages(room_url + "messages/");
 
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -292,6 +314,30 @@ function list_names(apiurl) {
 
         var name = data ["users-info"].nickname;
         appendMemberToList(name);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        //Show an alert informing that I cannot get info from the user.
+        alert ("Cannot extract information about this room from the forum service.");
+
+    });
+
+}
+
+function list_sender(apiurl) {
+    return $.ajax({
+        url: apiurl,
+        dataType:DEFAULT_DATATYPE,
+        processData:false,
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+
+        var name = data ["users-info"].nickname;
+        appendSenderToList(name);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -551,6 +597,21 @@ function appendMemberToList(name) {
     $("#members_list").append($member);
 }
 
+function appendSenderToList(name) {
+
+    var sender = ('<li class="chat_bubble" style="float: left; font-size: smaller">'+name+'</li>');
+    $("#messages_list").append(sender);
+}
+
+function appendMessageToList(content, sender) {
+
+    //list_sender("/api/users/" + sender);
+
+    var message = ('<li class="chat_bubble" style="float: left; font-size: smaller"> Sender: ' + sender + '</li>');
+    message += ('<li class="chat_bubble chat_bubble-received">' + content + '</li>');
+
+    $("#messages_list").append(message);
+}
 
 
  $(function(){
