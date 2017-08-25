@@ -7,7 +7,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
     <script type="text/javascript" src="chirrup_client.js"></script>
-
+    <script type="text/javascript" src="{{url_for('static', filename='chirrup_client.js')}}"> </script>
 
 </head>
 <body>
@@ -28,7 +28,7 @@
 
 </div>
 
-<form action="/users/10" id="user_form">
+<form id="user_form">
 
     <div class="container">
 
@@ -87,7 +87,7 @@
 
 <script>
 
-    get_user("/users/10/");
+    get_user("/users/" + {{userid}} );
 
     $(document).ready(function () {
 

@@ -33,7 +33,7 @@ function get_rooms(apiurl){
             var room = rooms[i];
 
             var name =  room.name;
-            var room_url = room["@controls"].self.href;
+            var room_url = "/chirrup/room/" + room.room_id;
 
             appendRoomToList(room_url, name);
 
@@ -66,7 +66,7 @@ function get_users(apiurl){
 
             var user = users[i];
             var name =  user.nickname;
-            var user_url = SERVER_LOCATION + user["@controls"].self.href;
+            var user_url = "/chirrup/user/" + user.user_id;
             appendUserToList(user_url, name);
         }
 
@@ -530,6 +530,8 @@ function handleDeleteUser(event){
     var user_url = $(this).closest("form").attr("action");
     console.log("url: " + user_url);
     delete_user(user_url);
+
+    return false;
 }
 
 function handleDeleteRoom(event){
@@ -541,6 +543,8 @@ function handleDeleteRoom(event){
     var room_url = $(this).closest("form").attr("action");
     console.log(room_url);
     delete_room(room_url);
+
+    return false;
 }
 
 function handleGetRoom(event){
@@ -550,15 +554,7 @@ function handleGetRoom(event){
     }
     var $form = $(this).closest("form");
     var url = $form.attr("action");
-    console.log("attr url: " + url);
-    window.location.href = "index.html";
 
-    $( document ).ready(function() {
-
-        get_room(url);
-        console.log("hello");
-
-    });
     return false; //Avoid executing the default submit
 }
 
@@ -606,8 +602,9 @@ function handleCreateRoom(event){
 function appendRoomToList(url, name) {
 
 
-    var $room = $('<tr><td>' + name + '</td> ' +
-        '<td><form id="joinRoom" action='+ url + ' >' + '<a href="index.html" class = "btn btn-info btn-sm"> <span class="glyphicon glyphicon-plus"></span> Join </a></form></td></tr>');
+    var $room = $('<tr><td>' + name + '</td><td><form id="joinRoom" action='+ url + ' >' + '<a href="'+ url +'" class = "btn btn-info btn-sm"> Join </a></form></td>');
+
+    //var $room = $('<tr><td><a href=' +url+ ' >' + name + '</a></td></tr>');
     //Append to list
     $("#roomlist").append($room);
 
