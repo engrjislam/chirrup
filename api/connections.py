@@ -579,7 +579,7 @@ class Connection(object):
         :raise ValueError if user_id not valid
 
         '''
-
+		
         user_id = self._check_id(user_id)
 
         # Init
@@ -996,7 +996,7 @@ class Connection(object):
         '''
         Removes a user from a room i.e. deletes the correct row in the room_users table.
         :param int room_id: room identifier
-        :param int use_id: user identifier
+        :param int user_id: user identifier
         :return: True if the member has been deleted, False if delete-process failed
         or None if room or user don't exist.
         :raise: ValueError if room_id or user_id malformed
@@ -1395,7 +1395,7 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user', field='username', value=username)
+        return self._is_exists(cur, table='user', field='username', value=username) is not None
 		
     def contains_email(self, email):
         '''
@@ -1411,7 +1411,7 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user', field='email', value=email)
+        return self._is_exists(cur, table='user', field='email', value=email) is not None
 	
     def contains_nickname(self, nickname):
         '''
@@ -1427,7 +1427,7 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user_profile', field='nickname', value=nickname)
+        return self._is_exists(cur, table='user_profile', field='nickname', value=nickname) is not None
 
     def get_room_name(self, room_id):
         '''
@@ -1612,4 +1612,4 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='room', field='name', value=name)
+        return self._is_exists(cur, table='room', field='name', value=name) is not None

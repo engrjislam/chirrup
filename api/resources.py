@@ -15,7 +15,6 @@ import json
 from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory
 from flask.ext.restful import Resource, Api, abort
 
-from utils import RegexConverter
 import engine
 
 
@@ -29,19 +28,13 @@ app.config.update({'Engine': engine.Engine()})
 api = Api(app)
 
 
-#Add the Regex Converter so we can use regex expressions when we define the
-#routes
-#app.url_map.converters["regex"] = RegexConverter
-
-
 #Constants for hypermedia formats and profiles
 MASON = "application/vnd.mason+json"
 JSON = "application/json"
 CHIRRUP_USER_PROFILE = "/profiles/user-profile/"
 CHIRRUP_MESSAGE_PROFILE = "/profiles/message-profile/"
+CHIRRUP_ROOM_PROFILE = "/profiles/message-profile/"
 ERROR_PROFILE = "/profiles/error-profile"
-
-ATOM_THREAD_PROFILE = "https://tools.ietf.org/html/rfc4685"
 
 # Fill these in
 APIARY_PROFILES_URL = "http://docs.chirrup.apiary.io/#reference/profiles"
@@ -234,6 +227,9 @@ def close_connection(exc):
         g.con.close()
 		
 class Users(Resource):
+    """
+    Resource Users implementation
+    """
 
     def get(self):
         '''
@@ -266,7 +262,8 @@ class Users(Resource):
             items.append(item)
         
         #RENDER
-        return envelope, 200
+        #return envelope, 200
+        return Response(json.dumps(envelope), 200, mimetype=MASON+";"+CHIRRUP_USER_PROFILE)
 
     def post(self):
         """
@@ -373,8 +370,7 @@ class User(Resource):
 
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
-		
-    	
+		   	
     def put(self, userid):
         """
         Modify an existing user in the database.
@@ -414,13 +410,11 @@ class User(Resource):
         image = request_body.get("image", None)
 		
         if image is None:
-            if user['image'] is not None:
+            if user["public_profile"]['image'] is not None:
 			    # user[image]='/images/image.jpg'
 				# so we need to extract 'image.jpg' from user['image'] 
 				# using python substring except '/images/' that is first 7 character
-                print user['image']
-                print user['image'][8:]
-                image = user['image'][8:]
+                image = user["public_profile"]['image'][8:]
 		
         user = {
 					"public_profile": 
@@ -430,8 +424,8 @@ class User(Resource):
 						},
 					"private_profile": 
 						{
-							"username": user['username'],
-                            "email": user['email']
+							"username": user["private_profile"]['username'],
+                            "email": user["private_profile"]['email']
 						}
                 }
         
@@ -447,8 +441,8 @@ class User(Resource):
 
         # CREATE RESPONSE AND RENDER
         string_data = json.dumps(envelope)
-        #return Response(string_data, status_code, mimetype=MASON+";"+ERROR_PROFILE)
-        return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+        return Response(string_data, status_code, mimetype=MASON+";"+ERROR_PROFILE)
+        #return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
 		
     def delete(self, userid):
         """
@@ -470,6 +464,9 @@ class User(Resource):
             return create_error_response(404, "Unknown user", "There is no user with id %s" % userid)
 
 class Rooms(Resource):
+    """
+    Resource Rooms implementation
+    """
 
     def get(self):
         '''
@@ -499,7 +496,8 @@ class Rooms(Resource):
             items.append(item)
         
         #RENDER
-        return envelope, 200
+        #return envelope, 200
+        return Response(json.dumps(envelope), 200, mimetype=MASON+";"+CHIRRUP_ROOM_PROFILE)
 		
     def post(self):
         """
@@ -545,10 +543,10 @@ class Rooms(Resource):
         except KeyError:
             return create_error_response(400, "Type id required!", "Please provide type in the request")
 			
-        # check wheather admin exist or not
+        # check type
         if type not in ['PUBLIC', 'PRIVATE']:
             return create_error_response(409, "Invalid room type!", "Room type '%s' is not correct. It should be either 'PUBLIC' of 'PRIVATE'." % type)
-
+		
         try:
             room_id = g.con.create_room(name, type, admin)
         except ValueError:
@@ -612,6 +610,9 @@ class Room(Resource):
             return create_error_response(404, "Unknown room", "There is no room with id %s" % roomid)
 
 class Messages(Resource):
+    """
+    Resource Messages implementation
+    """
 
     def get(self, roomid):
         '''
@@ -625,7 +626,7 @@ class Messages(Resource):
         envelope = ChirrupObject()                                                       
         envelope.add_control("self", href=api.url_for(Messages, roomid=roomid))
 
-        items = envelope["room-messages"] = []
+        items = envelope["rooms"] = []
 		
         if messages_db:
             for message in messages_db:
@@ -638,7 +639,8 @@ class Messages(Resource):
                 items.append(item)
         
         #RENDER
-        return envelope, 200
+        #return envelope, 200
+        return Response(json.dumps(envelope), 200, mimetype=MASON+";"+CHIRRUP_MESSAGE_PROFILE)
 		
     def post(self, roomid):
         """
@@ -693,12 +695,12 @@ class Messages(Resource):
 
 class Message(Resource):
     """
-    Room Resource.
+    Message Resource.
     """
 
     def get(self, messageid):
         """
-        Get basic information of a room.
+        Get basic information of a meesage.
         """
 
         message = g.con.get_message(messageid)
@@ -720,13 +722,13 @@ class Message(Resource):
         envelope['messages-info'] = item
 
         string_data = json.dumps(envelope)
-        return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
+        return Response(string_data, 200, mimetype=MASON+";"+CHIRRUP_MESSAGE_PROFILE)
 		
     def delete(self, messageid):
         """
-        Delete a room from the system.
+        Delete a message from the system.
 
-       : param int roomid: room id of the required room to be deleted.
+       : param int messageid: message id of the required meesage to be deleted.
 
         RESPONSE STATUS CODE:
          * If the room is deleted returns 204.
@@ -739,13 +741,19 @@ class Message(Resource):
             return "The message was successfully deleted.", 204
         else:
             # Send error message
-            return create_error_response(404, "Unknown message", "There is no meesage with id %s" % roomid)
+            #return create_error_response(404, "Unknown message", "There is no message with id %s" % messageid)
+            envelope = ChirrupObject(message="There is no message with id %s" % messageid)	
+            string_data = json.dumps(envelope)
+            return Response(string_data, 404, mimetype=MASON+";"+ERROR_PROFILE)
 		
 class Members(Resource):
+    """
+    Resource Members implementation
+    """
 
     def get(self, roomid):
         '''
-        Gets a list of all the rooms from the database.
+        Gets a list of all the members from the database.
         '''
         room = g.con.get_room(roomid)
         if room is None:
