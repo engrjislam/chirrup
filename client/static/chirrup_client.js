@@ -13,7 +13,7 @@ const PLAINJSON = "application/json";
 const DEFAULT_DATATYPE = "json";
 
 function get_rooms(apiurl){
-    apiurl = apiurl || ENTRYPOINT;
+    apiurl = SERVER_LOCATION + apiurl || ENTRYPOINT;
     $.ajax({
         url: apiurl,
         dataType:DEFAULT_DATATYPE
@@ -33,7 +33,7 @@ function get_rooms(apiurl){
             var room = rooms[i];
 
             var name =  room.name;
-            var room_url = "/chirrup/room/" + room.room_id;
+            var room_url = "/room/" + room.room_id;
 
             appendRoomToList(room_url, name);
 
@@ -49,7 +49,7 @@ function get_rooms(apiurl){
 
 function get_users(apiurl){
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE
     }).always(function(){
 
@@ -80,7 +80,7 @@ function get_users(apiurl){
 
 function get_user(apiurl) {
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE,
         processData:false
     }).done(function (data, textStatus, jqXHR){
@@ -143,7 +143,7 @@ function get_user(apiurl) {
 
 function get_messages(apiurl){
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE
     }).always(function(){
 
@@ -182,7 +182,7 @@ function add_user(apiurl,user){
     var userData = JSON.stringify(user);
     var nickname = user.nickname;
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         type: "POST",
         //dataType:DEFAULT_DATATYPE,
         data:userData,
@@ -212,7 +212,7 @@ function add_room(apiurl,room){
     var roomData = JSON.stringify(room);
     var name = room.name;
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         type: "POST",
         //dataType:DEFAULT_DATATYPE,
         data:roomData,
@@ -240,7 +240,7 @@ function add_room(apiurl,room){
 
 function get_room(apiurl) {
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE,
         processData:false
     }).done(function (data, textStatus, jqXHR){
@@ -270,7 +270,7 @@ function get_room(apiurl) {
 
 function get_members(apiurl) {
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE
     }).always(function(){
 
@@ -301,7 +301,7 @@ function get_members(apiurl) {
 
 function list_names(apiurl) {
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE,
         processData:false,
     }).done(function (data, textStatus, jqXHR){
@@ -325,7 +325,7 @@ function list_names(apiurl) {
 
 function list_sender(apiurl) {
     return $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE,
         processData:false,
     }).done(function (data, textStatus, jqXHR){
@@ -349,7 +349,7 @@ function list_sender(apiurl) {
 
 function replaceIdWithName(id) {
     return $.ajax({
-        url: "/users/" + id,
+        url: SERVER_LOCATION + "/users/" + id,
         dataType:DEFAULT_DATATYPE,
         processData:false,
     }).done(function (data, textStatus, jqXHR){
@@ -407,7 +407,7 @@ function serializeFormTemplate($form){
 
 function edit_user(apiurl, body){
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         type: "PUT",
         data:JSON.stringify(body),
         processData:false,
@@ -429,7 +429,7 @@ function edit_user(apiurl, body){
 
 function edit_room(apiurl, body){
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         type: "PUT",
         data:JSON.stringify(body),
         processData:false,
@@ -456,7 +456,7 @@ function edit_room(apiurl, body){
 
 function delete_user(apiurl){
     $.ajax({
-        url: apiurl,
+        url: SERVER_LOCATION + apiurl,
         type: "DELETE"
 
     }).done(function (data, textStatus, jqXHR){
