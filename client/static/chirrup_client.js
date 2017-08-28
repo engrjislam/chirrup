@@ -1,6 +1,5 @@
 const SERVER_LOCATION = "http://localhost:5000";
-const ENTRYPOINT = SERVER_LOCATION + "/rooms/";
-var DEBUG = true;
+var DEBUG = false;
 
 /**
  * Mason+JSON mime-type
@@ -13,7 +12,7 @@ const PLAINJSON = "application/json";
 const DEFAULT_DATATYPE = "json";
 
 function get_rooms(apiurl){
-    apiurl = SERVER_LOCATION + apiurl || ENTRYPOINT;
+    apiurl = SERVER_LOCATION + apiurl;
     $.ajax({
         url: apiurl,
         dataType:DEFAULT_DATATYPE
@@ -109,8 +108,13 @@ function get_user(apiurl) {
         $("#nick_name").append($user.nickname || "??" );
         //delete(data.nickname);
         $("#image").val($user.image||"??");
+        $("#nickname").val($user.nickname||"??");
+        $("#username").val($user.username||"??");
+        $("#email").val($user.email||"??");
 
         $("#user_form").attr("action", apiurl);
+
+        $("#picture").attr("src", "/" + $user.image);
 
         //Extract user information
         var user_links = data["@controls"];
@@ -162,7 +166,7 @@ function get_messages(apiurl){
         } else
             max_messages = messages.length - 10;
 
-        for (i = max_messages; i < messages.length; i++) {
+        for (i = messages.length - 1; i >= max_messages; i--) {
 
             var message = messages[i];
             appendMessageToList(message.content, message.sender);
@@ -199,6 +203,35 @@ function add_user(apiurl,user){
         alert ("User successfully added");
         //Add the user to the list and load it.
         $user = appendUserToList(jqXHR.getResponseHeader("Location"),nickname);
+
+    }).fail(function (jqXHR, textStatus, errorThrown){
+        if (DEBUG) {
+            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
+        }
+        alert ("Could not create new user:"+jqXHR.responseJSON.message);
+    });
+}
+//not needed because sockets
+function add_message(message){
+    var msgData = JSON.stringify(message);
+    var message = message.content;
+    return $.ajax({
+        url: document.location.href + "/messages/",
+        type: "POST",
+        //dataType:DEFAULT_DATATYPE,
+        data:msgData,
+        processData:false,
+        contentType: PLAINJSON
+    }).always(function(){
+
+        console.log(msgData);
+
+    }).done(function (data, textStatus, jqXHR){
+        if (DEBUG) {
+            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
+        }
+        alert ("Message successfully added");
+        //Add the user to the list and load it.
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -251,6 +284,9 @@ function get_room(apiurl) {
         var $room = data["rooms-info"];
 
         $("#room_name").empty().append($room.name);
+        $("#name").val($room.name||"??");
+        $("#admin").val($room.admin||"??");
+        $("#type").val($room.type||"??");
 
         var room_url = data["@controls"].self.href;
 
@@ -360,11 +396,7 @@ function replaceIdWithName(id) {
         var name = data["users-info"].nickname;
         $( ".sender_name" ).each(function( i ) {
 
-            console.log(id);
-            console.log($(this).html());
-
             if($(this).html() == id) {
-                console.log("hello");
                 $(this).empty().append(name);
             }
         });
@@ -628,12 +660,3 @@ function appendMessageToList(content, sender) {
 
     $("#messages_list").append(message);
 }
-
-
- $(function(){
-       // $("#deleteUser").on("click", handleDeleteUser);
-        $("#user_info").on("click",".deleteUser",handleDeleteUser);
-
-    });
-
-
