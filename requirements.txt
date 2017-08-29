@@ -1,2 +1,4 @@
 flask
+flask-restful
+flask-socketio
 werkzeug
