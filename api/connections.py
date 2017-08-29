@@ -130,7 +130,7 @@ class Connection(object):
         message_room_id = str(row['room_id'])
         message_user_id = str(row['user_id'])
         message_created = str(row['created'])
-        message_content = str(row['content'])
+        message_content = (row['content']).encode('UTF-8')
 
         message = {'message_id': message_id, 'room_id': message_room_id,
                    'user_id': message_user_id, 'created': message_created,
