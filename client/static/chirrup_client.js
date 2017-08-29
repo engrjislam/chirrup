@@ -65,7 +65,7 @@ function get_users(apiurl){
 
             var user = users[i];
             var name =  user.nickname;
-            var user_url = "/chirrup/user/" + user.user_id;
+            var user_url = "/user/" + user.user_id;
             appendUserToList(user_url, name);
         }
 
