@@ -9,3 +9,12 @@ Run all the tests:
 
 Create database using sql_dump files. Removes database if it already exists.
 "python init_database.py"
+
+
+Run api: 
+"python resources.py"
+
+Run client: 
+"python chirrup.py"
+
+Api runs on port 5000 and client on port 5001. Run both to use Chirrup

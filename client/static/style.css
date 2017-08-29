@@ -1,0 +1,33 @@
+div #chatbox {
+    height: 30em;
+    overflow-y: scroll;
+    align-content: center;
+}
+
+td {
+    white-space: nowrap;
+}
+
+.chat {
+    list-style-type: none;
+    width: 30em;
+    float: left;
+}
+
+.chat_bubble {
+    margin-bottom: 3px;
+    padding: 8px 10px;
+    clear: both;
+}
+
+.chat_bubble-received {
+    background: lightgrey;
+    float: left;
+    border-radius: 10px;
+}
+
+.chat_bubble-sent {
+    background: #5bc0de;
+    float: right;
+    border-radius: 10px;
+}

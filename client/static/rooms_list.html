@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Chirrup</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <script type="text/javascript" src="chirrup_client.js" charset="utf-8"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='chirrup_client.js')}}"> </script>
+</head>
+
+<body>
+
+<div class="jumbotron">
+    <h1 class="text-center" style="font-family: 'Chewy'">Rooms</h1>
+</div>
+
+<div class="row" style="padding-top: 30px">
+    <div class="col-md-3">
+
+        <ul style="list-style-type: none">
+
+            <img src="profile_pic.png" onerror="this.onerror=null;this.src='static/profile_pic.png';" alt="profile pic">
+            <h3>Test user</h3>
+
+
+            <li><a href="profile_page.html" class="btn btn-default">Go to profile</a></li>
+            <li>
+                <button type="button" class="btn btn-default">Log off</button>
+            </li>
+
+        </ul>
+
+    </div>
+
+    <div class="col-md-6">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th class="text-center">Room name</th>
+                <th width="10%"></th>
+            </tr>
+            </thead>
+            <tbody id="roomlist">
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+
+<script>
+
+    get_rooms("/rooms/");
+
+</script>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add user</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script type="text/javascript" src="chirrup_client.js"></script>
+
+</head>
+<body>
+
+<div class="text-center">
+    <h1 style="font-family: 'Chewy'; font-size:400%">Add user </h1>
+</div>
+<div class="text-center">
+    <img src="profile_pic.png" alt="profile pic">
+</div>
+
+
+<div style="padding-top: 30px">
+
+
+</div>
+
+
+<div class="container">
+
+    <form action="/users/">
+
+        <div class="row">
+            <div class="col-lg-4 col-lg-offset-5">
+                <p>Username:</p>
+                <div class="input-group text-center">
+                    <input id="username" type="text" class="form-control"/>
+                    &nbsp;
+                </div>
+
+                <p>Email address:</p>
+                <div class="input-group">
+                    <input id="email" type="text" class="form-control"/>
+                    &nbsp;
+                </div>
+
+                <p>Nickname:</p>
+                <div class="input-group">
+                    <input id="nickname" type="text" class="form-control"/>
+                    &nbsp;
+                </div>
+
+                <button id="createuser" class="btn btn-default" type="button">Create</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+</body>
+
+<script>
+    $(document).ready(function () {
+        $("#createuser").on("click", handleCreateUser);
+    });
+</script>
+
+</html>
