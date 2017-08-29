@@ -1,4 +1,5 @@
 flask
 flask-restful
 flask-socketio
+flask-cors
 werkzeug
