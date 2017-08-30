@@ -266,11 +266,13 @@ function get_room(apiurl) {
         var $room = data;
 
         $("#room_name").empty().append($room.name);
+
+        init_socket();
+
         $("#name").val($room.name||"??");
         $("#admin").val($room.admin||"??");
         $("#type").val($room.type||"PUBLIC");
 
-        var room_url = SERVER_LOCATION + data["@controls"].self.href;
 
         $("#room_form").attr("action", apiurl + "/");
 
@@ -510,6 +512,7 @@ function delete_room(apiurl){
     });
 }
 
+
 /**
  * Uses the API to create a new user with the form attributes in the present form.
  *
@@ -620,8 +623,8 @@ function appendMemberToList(name) {
 
 function appendSenderToList(name) {
 
-    var sender = ('<li class="chat_bubble" style="float: left; font-size: smaller">'+name+'</li>');
-    $("#messages_list").append(sender);
+    var msg = ('<li class="chat_bubble" style="float: left; font-size: smaller">'+name+'</li>');
+    $("#messages_list").append(msg);
 }
 
 function appendMessageToList(content, sender) {
@@ -632,4 +635,62 @@ function appendMessageToList(content, sender) {
     message += ('<li class="chat_bubble chat_bubble-received">' + content + '</li>');
 
     $("#messages_list").append(message);
+}
+
+/**
+ * Socket.io chat
+ *
+ **/
+
+function init_socket() {
+    var socket;
+    var nickname = 'rICK';
+    var room_name = $("#room_name").html();
+    console.log(room_name);
+
+    console.log('socket init');
+    // Endpoint is the same for every message. Dynamic endpoints weren't supported.
+    //socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
+    socket = io.connect('http://localhost:5000/chat');
+
+    socket.on('connect', function () {
+        // socket.emit('foo', {key: value}) sends an foo event to connected route.
+        socket.emit('joined', {room_name: room_name, nickname: nickname});
+    });
+    socket.on('status', function (data) {
+        //     $('#chat').val($('#chat').val() + '<' + data.msg + '>\n');
+        //   $('#chat').scrollTop($('#chat')[0].scrollHeight);
+        var message = ('<li class="chat_bubble sender_name" style="float: left; font-size: smaller">' + data.msg + '</li>');
+        $("#messages_list").append(message);
+        $("#chatbox").scrollTop($('#chatbox')[0].scrollHeight);
+
+    });
+    socket.on('message', function (data) {
+        //  $('#chat').val($('#chat').val() + data.msg + '\n');
+        //  $('#chat').scrollTop($('#chat')[0].scrollHeight);
+
+        var msg = data.msg.split(":");
+
+        var message = ('<li class="chat_bubble chat_bubble-sent">' + msg[1] + '</li>');
+        $("#messages_list").append(message);
+        $("#chatbox").scrollTop($('#chatbox')[0].scrollHeight);
+
+    });
+    $('#text').keypress(function (e) {
+        var code = e.keyCode || e.which;
+        if (code == 13) {
+            text = $('#text').val();
+            $('#text').val('');
+            socket.emit('text', {msg: text, room_name: room_name, nickname: nickname});
+        }
+    });
+}
+
+function leave_room() {
+    console.log(room_name, nickname);
+    socket.emit('left', {room_name: room_name, nickname: nickname}, function () {
+        socket.disconnect();
+        // redirect somewhere else or close the chat window
+        // window.location.replace('some_other_file.html');
+    });
 }
