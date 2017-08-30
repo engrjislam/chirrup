@@ -23,7 +23,7 @@
             <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
             <h3>
                 <a href="http://localhost:5001/user/1">
-                    Test user
+               rICK
                 </a>
             </h3>
         </div>
@@ -31,11 +31,7 @@
             <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"></h1>
 
         </div>
-        <div class="col-md-1">
-            <a href="#" class="btn btn-info btn-lg">
-                <span class="glyphicon glyphicon-log-out"></span> Log out
-            </a>
-        </div>
+
     </div>
 
     <div class="row" style="padding-top: 30px; font-family: 'Saira Semi Condensed', sans-serif">
@@ -87,7 +83,7 @@
         </div>
     </div>
 
-    <div class="container" align="center">
+    <div class="container" align="center" id="editroom">
 
         <form id="room_form">
 
@@ -113,7 +109,6 @@
                             <option value="PRIVATE">
                         </datalist>
                         &nbsp;
-
                     </div>
 
                     <div class="row">
@@ -133,6 +128,13 @@
 
                 </div>
             </div>
+
+<div class="container text-center" style="height: 100px;">
+    <div id="user_info" class="btn-group-vertical">
+        &nbsp;
+
+        <a href="/rooms_list.html"  class="btn btn-default">Browse rooms</a>
+        <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
 
         </form>
     </div>
