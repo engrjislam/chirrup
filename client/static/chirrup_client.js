@@ -1,5 +1,5 @@
 const SERVER_LOCATION = "http://localhost:5000";
-var DEBUG = false;
+var DEBUG = true;
 
 /**
  * Mason+JSON mime-type
@@ -112,28 +112,10 @@ function get_user(apiurl) {
         $("#username").val($user.username||"??");
         $("#email").val($user.email||"??");
 
-        $("#user_form").attr("action", apiurl);
+        $("#user_form").attr("action", apiurl + "/");
 
         $("#picture").attr("src", "/" + $user.image);
 
-        //Extract user information
-        var user_links = data["@controls"];
-        //Extracts urls from links. I need to get if the different links in the
-        //response.
-
-        if ("delete" in user_links)
-            var delete_link = user_links["delete"].href; // User delete linke
-        if ("edit" in user_links)
-            var edit_link = user_links["edit"].href;
-
-        if (delete_link){
-            $("#user_form").attr("action", delete_link);
-            $("#deleteUser").show();
-        }
-        if (edit_link){
-            $("#user_form").attr("action", edit_link);
-            $("#editUser").show();
-        }
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -286,9 +268,11 @@ function get_room(apiurl) {
         $("#room_name").empty().append($room.name);
         $("#name").val($room.name||"??");
         $("#admin").val($room.admin||"??");
-        $("#type").val($room.type||"??");
+        $("#type").val($room.type||"PUBLIC");
 
         var room_url = data["@controls"].self.href;
+
+        $("#room_form").attr("action", apiurl + "/");
 
         get_members(room_url + "members/");
         get_messages(room_url + "messages/");
@@ -466,9 +450,6 @@ function edit_room(apiurl, body){
         data:JSON.stringify(body),
         processData:false,
         contentType: PLAINJSON
-    }).always(function(){
-
-        console.log(data);
 
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
@@ -495,9 +476,8 @@ function delete_user(apiurl){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
-        alert ("The user information has been deleted from the database");
+        alert ("The user information has been deleted from the database. url: " + apiurl);
         //Update the list of users from the server.
-        getUsers();
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
@@ -512,23 +492,18 @@ function delete_room(apiurl){
         url: SERVER_LOCATION + apiurl,
         type: "DELETE"
 
-    }).always(function(){
-
-        console.log(apiurl);
-
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
         alert ("The room information has been deleted from the database");
-        //Update the list of users from the server.
-        get_rooms();
+        //Update the list of users from the server.s
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
-        alert ("The room information could not be deleted from the database. ");
+        alert ("The room information could not be deleted from the database. url: " + apiurl);
     });
 }
 
@@ -573,7 +548,6 @@ function handleDeleteRoom(event){
     }
 
     var room_url = $(this).closest("form").attr("action");
-    console.log(room_url);
     delete_room(room_url);
 
     return false;
@@ -581,7 +555,7 @@ function handleDeleteRoom(event){
 
 function handleEditRoom(event){
     if (DEBUG) {
-        console.log ("Triggered handleEditUser");
+        console.log ("Triggered handleEditRoom");
     }
     var $form = $(this).closest("form");
     var body = serializeFormTemplate($form);
@@ -593,7 +567,6 @@ function handleEditRoom(event){
     edit_room(url, body);
     return false; //Avoid executing the default submit
 }
-
 
 function handleCreateUser(event){
     if (DEBUG) {

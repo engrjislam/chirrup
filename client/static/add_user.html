@@ -12,50 +12,57 @@
 </head>
 <body>
 
-<div class="text-center">
-    <h1 style="font-family: 'Chewy'; font-size:400%">Add user </h1>
-</div>
-<div class="text-center">
-    <img src="profile_pic.png" alt="profile pic">
-</div>
+    <div class="text-center">
+        <h1 style="font-family: 'Chewy'; font-size:400%">Add user </h1>
+    </div>
+    <div class="text-center">
+        <img src="profile_pic.png" alt="profile pic">
+    </div>
 
 
-<div style="padding-top: 30px">
+    <div style="padding-top: 30px">
 
 
-</div>
+    </div>
 
 
-<div class="container">
+    <div class="container">
 
-    <form action="/users/">
+        <form action="/users/">
 
-        <div class="row">
-            <div class="col-lg-4 col-lg-offset-5">
-                <p>Username:</p>
-                <div class="input-group text-center">
-                    <input id="username" type="text" class="form-control"/>
-                    &nbsp;
+            <div class="row">
+                <div class="col-lg-4 col-lg-offset-5">
+                    <p>Username:</p>
+                    <div class="input-group text-center">
+                        <input id="username" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <p>Email address:</p>
+                    <div class="input-group">
+                        <input id="email" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <p>Nickname:</p>
+                    <div class="input-group">
+                        <input id="nickname" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+                    <div class="container text-center btn-group-vertical ">
+                        <button id="createuser" class="btn btn-default" type="button" style="width: 120px">Create</button>
+                        &nbsp;
+
+                        <a href="http://localhost:5001/user/1" class="btn btn-default" style="width: 120px">Profile page</a>
+                        &nbsp;
+                        
+                        <a href="http://localhost:5001/rooms_list.html" class="btn btn-default" style="width: 120px">Browse rooms</a>
+                    </div>
                 </div>
-
-                <p>Email address:</p>
-                <div class="input-group">
-                    <input id="email" type="text" class="form-control"/>
-                    &nbsp;
-                </div>
-
-                <p>Nickname:</p>
-                <div class="input-group">
-                    <input id="nickname" type="text" class="form-control"/>
-                    &nbsp;
-                </div>
-
-                <button id="createuser" class="btn btn-default" type="button">Create</button>
             </div>
-        </div>
 
-    </form>
-</div>
+        </form>
+    </div>
 
 </body>
 
