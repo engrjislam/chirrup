@@ -17,21 +17,21 @@
 
 <body>
 
-<div class="container-fluid" style="padding: 20px">
-    <div class="row">
-        <div class="col-md-1">
-            <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
-            <h3>
-                <a href="http://localhost:5001/user/1">
-               rICK
-                </a>
-            </h3>
-        </div>
-        <div class="col-md-10 text-center">
+    <div class="container-fluid" style="padding: 20px">
+        <div class="row">
+            <div class="col-md-1">
+                <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
+                <h3>
+                    <a href="http://localhost:5001/user/1">
+                     rICK
+                 </a>
+             </h3>
+         </div>
+         <div class="col-md-10 text-center">
             <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"> </h1>
 
         </div>
-  
+        
     </div>
 
     <div class="row" style="padding-top: 30px; font-family: 'Saira Semi Condensed', sans-serif">
@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <div class="container" align="center" id="editroom">
+    <div class="container" align="center" id="edits">
 
         <form id="room_form">
 
@@ -106,17 +106,20 @@
                         &nbsp;
                     </div>
 
-<<<<<<< HEAD
-=======
+
+
                     <button id="editroom" class="btn btn-default" type="button">Save changes</button>
                     <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
->>>>>>> 4187facf7efefde4462b440e4d660b5d4865a049
+                    
+
                 </div>
             </div>
 
         </form>
     </div>
-
+    <div class="container" align="center">
+       <button id ="editsrooms" class="btn btn-default" type="button">Edit room</button>
+   </div>
 </div>
 
 <div class="container text-center" style="height: 100px;">
@@ -124,7 +127,6 @@
         &nbsp;
 
         <a href="/rooms_list.html"  class="btn btn-default">Browse rooms</a>
-        <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
 
     </div>
 </div>
@@ -140,6 +142,14 @@
         $("#deleteroom").on("click", handleDeleteRoom);
         $("#editroom").on("click", handleEditRoom);
 
+        $("#edits").hide(); //Hide change room information div
+
+      $("#editsrooms").click(function(){ //When button is clicked, change room info is shown and the button is removed
+        $("#edits").show();
+        $(this).remove();
+        
+    });
+      
 </script>
 
 </html>
