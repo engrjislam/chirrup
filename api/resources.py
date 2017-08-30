@@ -325,19 +325,6 @@ class ChirrupObject(MasonObject):
         : rtype:: dict
         """
 
-    def add_control_edit_user(self):
-        """
-        This adds the add-room control to an object. Intended for the
-        document object. Instead of adding a schema dictionary we are pointing
-        to a schema url instead for two reasons: 1) to demonstrate both options;
-        2) the user schema is relatively large.
-        """
-
-        self["@controls"]["edit-user"] = {
-            "href": api.url_for(User),
-            "method": "PUT"
-        }
-
     def add_control_edit_room(self):
         """
         This adds the add-room control to an object. Intended for the
@@ -988,6 +975,92 @@ class Room(Resource):
 
         string_data = json.dumps(envelope)
         return Response(string_data, 200, mimetype=MASON+";"+CHIRRUP_ROOM_PROFILE)
+
+    def put(self, roomid):
+        """"
+        Modifies the nickname, image properties of this user.
+
+        INPUT PARAMETERS:
+       : param int roomid: The id of the user to be edited
+
+        REQUEST ENTITY BODY:
+        * Media type: JSON
+        * Profile: CHIRRUP_USER_PROFILE
+          /profiles/room-profile
+
+        The body should be a JSON document that matches the schema for editing users
+        If image is not there consider it remains as before.
+
+        OUTPUT:
+         * Returns 204 if the room is modified correctly
+         * Returns 400 if the body of the request is not well formed or it is
+           empty.
+         * Returns 404 if there is no room with roomid
+         * Returns 415 if the input is not JSON.
+         * Returns 500 if the database cannot be modified
+
+        """
+        # CHECK THAT ROOM EXISTS
+        if not g.con.contains_room(roomid):
+            return create_error_response(400, "Room does not exist",
+                                         "There is no a user with id %s" % userid
+                                         )
+
+        user = g.con.get_room(roomid)
+
+        if JSON != request.headers.get("Content-Type", ""):
+            abort(415)
+        create_error_response(415, "Error", "Your content types be fail")
+        # PARSE THE REQUEST:
+        request_body = request.get_json(force=True)
+        if not request_body:
+            return create_error_response(415, "Unsupported Media Type",
+                                         "Use a JSON compatible format",
+                                         )
+        # Get the request body and serialize it to object
+        # We should check that the format of the request body is correct. Check
+        # That mandatory attributes are there.
+
+        # pick up nickname so we can check for conflicts
+        try:
+            name = request_body["name"]
+        except KeyError:
+            return create_error_response(400, "Name required!", "Please provide name in the request")
+        try:
+            admin = request_body["admin"]
+        except KeyError:
+            return create_error_response(400, "Admin required!", "Please provide admin in the request")
+        try:
+            type = request_body["type"]
+        except KeyError:
+            return create_error_response(400, "Name required!", "Please provide type in the request")
+
+
+        # Conflict if user already exist
+        if g.con.contains_room_name(name):
+            return create_error_response(409, "Name exists!", "Name %s already exists." % name)
+
+        room = {
+                    "name": name,
+                    "admin": admin,
+                    "type": type,
+                    "status": "ACTIVE"
+        }
+
+        try:
+            roomid = g.con.modify_room(roomid, room)
+            envelope = ChirrupObject(message='The room information is modified correctly.')
+            envelope.add_control('self', href=api.url_for(Room, roomid=roomid))
+            status_code = 204
+        except ValueError:
+            envelope = ChirrupObject(resource_url=api.url_for(User, roomid=roomid))
+            envelope.add_error(title='Room does not exist', messages='User does not exist')
+            status_code = 400
+
+        # CREATE RESPONSE AND RENDER
+        string_data = json.dumps(envelope)
+        return Response(string_data, status_code, mimetype=MASON+";"+CHIRRUP_ROOM_PROFILE)
+        #return Response(string_data, 200, mimetype=MASON+";"+ERROR_PROFILE)
 
     def delete(self, roomid):
         """

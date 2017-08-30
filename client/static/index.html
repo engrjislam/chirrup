@@ -23,7 +23,7 @@
             <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
             <h3>
                 <a href="http://localhost:5001/user/1">
-               rICK
+                    rICK
                 </a>
             </h3>
         </div>
@@ -55,35 +55,11 @@
                 Room members
             </h3>
             <ul id="members_list">
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
-                <li>
-                    User
-                </li>
             </ul>
         </div>
     </div>
 
-    <div class="container" align="center" id="editroom">
+    <div class="container" align="center">
 
         <form id="room_form">
 
@@ -129,12 +105,11 @@
                 </div>
             </div>
 
-<div class="container text-center" style="height: 100px;">
-    <div id="user_info" class="btn-group-vertical">
-        &nbsp;
+            <div class="container text-center" style="height: 100px;">
+                <div id="user_info" class="btn-group-vertical">
+                    &nbsp;
 
-        <a href="/rooms_list.html"  class="btn btn-default">Browse rooms</a>
-        <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
+                    <a href="/rooms_list.html"  class="btn btn-default">Browse rooms</a>
 
         </form>
     </div>
@@ -145,3 +120,12 @@
 <script>
 
 
+    var roomid = (document.location.href).split("/").pop(); //get the id of the room
+    get_room("/rooms/" + roomid);
+
+    $("#deleteroom").on("click", handleDeleteRoom);
+    $("#editroom").on("click", handleEditRoom);
+
+</script>
+
+</html>

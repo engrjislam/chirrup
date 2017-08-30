@@ -100,7 +100,7 @@ function get_user(apiurl) {
 
           */
 
-        var $user = data["users-info"];
+        var $user = data;
 
         //Fill basic information from the user_basic_form
         $("#user_name").append($user.username);
@@ -140,7 +140,7 @@ function get_messages(apiurl){
             console.log ("get_messages: RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        var messages = data["room-messages"];
+        var messages = data["messages-all"];
         var max_messages;
 
         if (messages.length < 10 ) {
@@ -263,19 +263,19 @@ function get_room(apiurl) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        var $room = data["rooms-info"];
+        var $room = data;
 
         $("#room_name").empty().append($room.name);
         $("#name").val($room.name||"??");
         $("#admin").val($room.admin||"??");
         $("#type").val($room.type||"PUBLIC");
 
-        var room_url = data["@controls"].self.href;
+        var room_url = SERVER_LOCATION + data["@controls"].self.href;
 
         $("#room_form").attr("action", apiurl + "/");
 
-        get_members(room_url + "members/");
-        get_messages(room_url + "messages/");
+        get_members(apiurl + "/members/");
+        get_messages(apiurl + "/messages/");
 
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -301,14 +301,16 @@ function get_members(apiurl) {
             console.log ("get_members: RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        var members = data["room-members"];
+        var members = data["members-all"];
+        console.log(members);
 
         for (i = 0; i < members.length; i++) {
 
             var member = members[i];
             var id =  member.id;
+            var name = member.nickname;
             var user_url = "/users/" + id + "/";
-            list_names(user_url);
+            appendMemberToList(name);
         }
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -318,7 +320,7 @@ function get_members(apiurl) {
         alert("Cannot get information from message: "+ apiurl);
     });
 }
-
+/*
 function list_names(apiurl) {
     return $.ajax({
         url: SERVER_LOCATION + apiurl,
@@ -329,7 +331,7 @@ function list_names(apiurl) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        var name = data ["users-info"].nickname;
+        var name = data.nickname;
         appendMemberToList(name);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
@@ -342,6 +344,7 @@ function list_names(apiurl) {
     });
 
 }
+*/
 
 function list_sender(apiurl) {
     return $.ajax({
@@ -377,7 +380,7 @@ function replaceIdWithName(id) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        var name = data["users-info"].nickname;
+        var name = data.nickname;
         $( ".sender_name" ).each(function( i ) {
 
             if($(this).html() == id) {
@@ -560,9 +563,6 @@ function handleEditRoom(event){
     var $form = $(this).closest("form");
     var body = serializeFormTemplate($form);
     var url = $form.attr("action");
-
-    console.log(url);
-    console.log(body);
 
     edit_room(url, body);
     return false; //Avoid executing the default submit
