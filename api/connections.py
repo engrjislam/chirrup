@@ -263,22 +263,6 @@ class Connection(object):
         else:
             return True
 
-    def _check_id(self, id):
-        '''
-        Checks if id possible to convert to int. Id must be positive.
-        :param id:
-        :return: id
-        :raise: ValueError if conversion not possible
-        '''
-        try:
-            id = int(id)
-        except:
-            raise ValueError
-        if id < 0:
-            raise ValueError
-        return id
-
-
     def _is_exists(self, cursor, table, field, value):
         '''
         Checks if e.g. user exists in a user-table. Id checks already done in the upper level.
@@ -595,7 +579,7 @@ class Connection(object):
         :raise ValueError if user_id not valid
 
         '''
-
+		
         user_id = self._check_id(user_id)
 
         # Init
@@ -1012,7 +996,7 @@ class Connection(object):
         '''
         Removes a user from a room i.e. deletes the correct row in the room_users table.
         :param int room_id: room identifier
-        :param int use_id: user identifier
+        :param int user_id: user identifier
         :return: True if the member has been deleted, False if delete-process failed
         or None if room or user don't exist.
         :raise: ValueError if room_id or user_id malformed
@@ -1400,35 +1384,50 @@ class Connection(object):
     def contains_username(self, username):
         '''
         Check whether username is exists or not.
+        
+        :param string username: The unique identificate of the user.
+        :return: the database attribute username or None if ``username`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user', field='username', value=username)
+        return self._is_exists(cur, table='user', field='username', value=username) is not None
 		
     def contains_email(self, email):
         '''
         Check whether email is exists or not.
+
+        :param string email: The unique identificate of the user.
+        :return: the database attribute email or None if ``email`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user', field='email', value=email)
+        return self._is_exists(cur, table='user', field='email', value=email) is not None
 	
     def contains_nickname(self, nickname):
         '''
         Check whether email is exists or not.
+
+        :param string nickname: The unique identificate of the user.
+        :return: the database attribute nickname or None if ``nickname`` does not exit.
+        :rtype: str
+
         '''
 
         # Init
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='user_profile', field='nickname', value=nickname)
+        return self._is_exists(cur, table='user_profile', field='nickname', value=nickname) is not None
 
     def get_room_name(self, room_id):
         '''
@@ -1583,13 +1582,23 @@ class Connection(object):
 
     def contains_user(self, user_id):
         '''
-        :return: True if the user is in the database. False otherwise
+        Check whether a user is exists or not.
+
+        :param int user_id: The unique identificate of the user.
+        :return: the database attribute nickname or None if ``user_id`` does not exit.
+        :rtype: str
+
         '''
         return self.get_user_nickname(user_id) is not None
 
     def contains_room(self, room_id):
         '''
-        :return: True if the room is in the database. False otherwise
+        Check whether room is exists or not.
+
+        :param int room_id: The unique identificate of the room.
+        :return: the database attribute email or None if ``email`` does not exit.
+        :rtype: str
+
         '''
         return self.get_room_name(room_id) is not None
 		
@@ -1603,4 +1612,4 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        return self._is_exists(cur, table='room', field='name', value=name)
+        return self._is_exists(cur, table='room', field='name', value=name) is not None
