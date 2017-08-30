@@ -3,11 +3,11 @@
 <head>
     <title>Chirrup</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <link rel="stylesheet" href="http://localhost:5001/style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
-    <script type="text/javascript" src="{{url_for('static', filename='chirrup_client.js')}}"> </script>
+    <script type="text/javascript" src="http://localhost:5001/chirrup_client.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
     <script type="text/javascript" src="http://localhost:5001/socket_example.js"></script>
 
@@ -17,21 +17,21 @@
 
 <body>
 
-    <div class="container-fluid" style="padding: 20px">
-        <div class="row">
-            <div class="col-md-1">
-                <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
-                <h3>
-                    <a href="http://localhost:5001/user/1">
-                     rICK
-                 </a>
-             </h3>
-         </div>
-         <div class="col-md-10 text-center">
-            <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"> </h1>
+<div class="container-fluid" style="padding: 20px">
+    <div class="row">
+        <div class="col-md-1">
+            <img src="http://localhost:5001/profile_pic.png" alt="profile pic">
+            <h3>
+                <a href="http://localhost:5001/user/1">
+               rICK
+                </a>
+            </h3>
+        </div>
+        <div class="col-md-10 text-center">
+            <h1 id="room_name" style="font-family: 'Chewy', cursive; font-size:500%"></h1>
 
         </div>
-        
+
     </div>
 
     <div class="row" style="padding-top: 30px; font-family: 'Saira Semi Condensed', sans-serif">
@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <div class="container" align="center" id="edits">
+    <div class="container" align="center" id="editroom">
 
         <form id="room_form">
 
@@ -100,34 +100,43 @@
                         <input id="admin" type="number" class="form-control"/>
                         &nbsp;
                     </div>
-                    <p>Room type (PUBLIC/PRIVATE):</p>
+                    <p>Room type:</p>
                     <div class="input-group text-center">
-                        <input id="type" type="text" class="form-control"/>
+
+                        <input id="type" type="text" name="city" list="roomtype">
+                        <datalist id="roomtype">
+                            <option value="PUBLIC">
+                            <option value="PRIVATE">
+                        </datalist>
                         &nbsp;
                     </div>
 
+                    <div class="row">
+                        <div class="input-group text-center" style="padding: 1em">
 
+                            <button id="editroom" class="btn btn-default" type="button">Save changes</button>
+                        </div>
+                        <div class="input-group text-center">
+                            <button id="deleteroom" class="btn btn-default" type="button">Delete room</button>
+                        </div>
+                        <div id="user_info" class="btn-group-vertical">
+                            &nbsp;
+                            <a href="/rooms_list.html" class="btn btn-default">Browse rooms</a>
 
-                    <button id="editroom" class="btn btn-default" type="button">Save changes</button>
-                    <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
-                    
+                        </div>
+                    </div>
 
                 </div>
             </div>
-
-        </form>
-    </div>
-    <div class="container" align="center">
-       <button id ="editsrooms" class="btn btn-default" type="button">Edit room</button>
-   </div>
-</div>
 
 <div class="container text-center" style="height: 100px;">
     <div id="user_info" class="btn-group-vertical">
         &nbsp;
 
         <a href="/rooms_list.html"  class="btn btn-default">Browse rooms</a>
+        <button id ="deleteroom" class="btn btn-default" type="button">Delete room</button>
 
+        </form>
     </div>
 </div>
 
@@ -136,20 +145,3 @@
 <script>
 
 
-        var roomid = (document.location.href).split("/").pop(); //get the id of the room
-        get_room("/rooms/" + roomid );
-
-        $("#deleteroom").on("click", handleDeleteRoom);
-        $("#editroom").on("click", handleEditRoom);
-
-        $("#edits").hide(); //Hide change room information div
-
-      $("#editsrooms").click(function(){ //When button is clicked, change room info is shown and the button is removed
-        $("#edits").show();
-        $(this).remove();
-        
-    });
-      
-</script>
-
-</html>

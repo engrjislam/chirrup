@@ -21,6 +21,7 @@ $(document).ready(function () {
          //   $('#chat').scrollTop($('#chat')[0].scrollHeight);
             var message = ('<li class="chat_bubble sender_name" style="float: left; font-size: smaller">' + data.msg + '</li>');
             $("#messages_list").append(message);
+            $("#chatbox").scrollTop($('#chatbox')[0].scrollHeight);
 
         });
         socket.on('message', function (data) {
@@ -31,6 +32,7 @@ $(document).ready(function () {
 
             var message = ('<li class="chat_bubble chat_bubble-sent">' + msg[1] + '</li>');
             $("#messages_list").append(message);
+            $("#chatbox").scrollTop($('#chatbox')[0].scrollHeight);
 
         });
         $('#text').keypress(function (e) {

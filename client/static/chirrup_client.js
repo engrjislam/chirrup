@@ -268,7 +268,7 @@ function get_room(apiurl) {
         $("#room_name").empty().append($room.name);
         $("#name").val($room.name||"??");
         $("#admin").val($room.admin||"??");
-        $("#type").val($room.type||"??");
+        $("#type").val($room.type||"PUBLIC");
 
         var room_url = data["@controls"].self.href;
 
