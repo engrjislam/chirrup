@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Add user</title>
+    <title>Add room</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -15,10 +15,6 @@
 <div class="text-center">
     <h1 style="font-family: 'Chewy'; font-size:400%">Add room </h1>
 </div>
-<div class="text-center">
-    <img src="profile_pic.png" alt="profile pic">
-</div>
-
 
 <div style="padding-top: 30px">
 
@@ -44,8 +40,11 @@
                 </div>
                 <p>Room type (PUBLIC/PRIVATE):</p>
                 <div class="input-group text-center">
-                    <input id="type" type="text" class="form-control"/>
-                    &nbsp;
+                    <input id="type" type="text" name="city" list="roomtype">
+                    <datalist id="roomtype">
+                        <option value="PUBLIC">
+                        <option value="PRIVATE">
+                    </datalist>
                 </div>
 
                 <button id="createroom" class="btn btn-default" type="button">Create</button>

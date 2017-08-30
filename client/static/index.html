@@ -36,6 +36,9 @@
 
     <div class="row" style="padding-top: 30px; font-family: 'Saira Semi Condensed', sans-serif">
         <div class="col-md-2">
+
+            <a href="/rooms_list.html" class="btn btn-default">Browse rooms</a>
+
         </div>
         <div class="col-md-8">
 
@@ -60,8 +63,10 @@
     </div>
 
     <div class="container" align="center">
+        <button id="editbutton" class="btn btn-default" type="button">Edit room</button>
 
-        <form id="room_form">
+
+        <form id="room_form" style="display: none">
 
             <div class="row">
                 <h3 style="padding-top: 10em;">Change room info</h3>
@@ -106,6 +111,7 @@
             </div>
         </form>
     </div>
+</div>
 
 </body>
 
@@ -117,6 +123,12 @@
 
     $("#deleteroom").on("click", handleDeleteRoom);
     $("#editroom").on("click", handleEditRoom);
+
+    $("#editbutton").click(function () { //When button is clicked, change room info is shown and the button is removed
+        $("#room_form").show();
+        $(this).remove();
+
+    });
 
 </script>
 

@@ -168,7 +168,7 @@ function add_user(apiurl,user){
     var userData = JSON.stringify(user);
     var nickname = user.nickname;
     return $.ajax({
-        url: SERVER_LOCATION + apiurl,
+        url: apiurl,
         type: "POST",
         //dataType:DEFAULT_DATATYPE,
         data:userData,
@@ -176,7 +176,7 @@ function add_user(apiurl,user){
         contentType: PLAINJSON
     }).always(function(){
 
-        console.log(userData);
+        console.log(apiurl);
 
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
@@ -184,13 +184,11 @@ function add_user(apiurl,user){
         }
         alert ("User successfully added");
         //Add the user to the list and load it.
-        $user = appendUserToList(jqXHR.getResponseHeader("Location"),nickname);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
-        alert ("Could not create new user:"+jqXHR.responseJSON.message);
     });
 }
 //not needed because sockets
@@ -229,27 +227,20 @@ function add_room(apiurl,room){
     return $.ajax({
         url: SERVER_LOCATION + apiurl,
         type: "POST",
-        //dataType:DEFAULT_DATATYPE,
         data:roomData,
         processData:false,
         contentType: PLAINJSON
-    }).always(function(){
-
-        console.log(roomData);
-
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
         alert ("Room successfully added");
         //Add the user to the list and load it.
-        $room = appendRoomToList(jqXHR.getResponseHeader("Location"),name);
 
     }).fail(function (jqXHR, textStatus, errorThrown){
         if (DEBUG) {
             console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
         }
-        alert ("Could not create new room:"+jqXHR.responseJSON.message);
     });
 }
 
@@ -579,7 +570,7 @@ function handleCreateUser(event){
     var template = serializeFormTemplate($form);
     var url = $form.attr("action");
     console.log(template);
-    add_user(url, template);
+    add_user(SERVER_LOCATION + url, template);
     return false; //Avoid executing the default submit
 }
 
@@ -590,7 +581,6 @@ function handleCreateRoom(event){
     var $form = $(this).closest("form");
     var template = serializeFormTemplate($form);
     var url = $form.attr("action");
-    console.log(template);
     add_room(url, template);
     return false; //Avoid executing the default submit
 }
