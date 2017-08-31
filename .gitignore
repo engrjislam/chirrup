@@ -1,2 +1,4 @@
 *.pyc
 .idea/
+db/chirrup.db
+*.Rhistory

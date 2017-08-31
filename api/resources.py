@@ -12,8 +12,8 @@ Updated on 10.08.2017
 import time
 from datetime import datetime
 import json
-from flask import Flask, request, Response, g, _request_ctx_stack, redirect, send_from_directory, render_template, session
-from flask.ext.restful import Resource, Api, abort
+from flask import Flask, request, Response, g, _request_ctx_stack, session
+from flask_restful import Resource, Api, abort
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 import jinja2
