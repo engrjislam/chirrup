@@ -7,7 +7,7 @@ Python 2.7 required.
 3.Create database using sql_dump files. Removes database if it already exists. "python init_database.py"
 
 4.Run api: "python -m api.resources.py"
-Runs on port 5000.
+Runs on port 5000. Only one server can be run at a time.
 
 5.Run client: "python chirrup.py"
 Start address in "http://localhost:5001/rooms_list.html".
