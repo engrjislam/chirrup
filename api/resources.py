@@ -16,7 +16,6 @@ from flask import Flask, request, Response, g, _request_ctx_stack, session
 from flask_restful import Resource, Api, abort
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
-import jinja2
 
 import engine
 
@@ -404,7 +403,7 @@ def connect_db():
 
     The connection is stored in the application context variable flask.g .
     Hence it is accessible from the request object.'''
-    print('opening db onnection')
+    #print('opening db onnection')
     g.con = app.config['Engine'].connect()
 
 @app.teardown_request
@@ -413,7 +412,7 @@ def close_connection(exc):
         Check if the connection is created. It might be exception appear before
         the connection is created.'''
 
-    print('closing db connection')
+    #print('closing db connection')
     if hasattr(g, 'con'):
         g.con.close()
 

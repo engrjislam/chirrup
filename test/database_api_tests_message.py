@@ -55,6 +55,16 @@ NEW_MESSAGE = {
     'content': 'Hello from the otter side.',
     'created': '907123490'
 }
+
+NEW_MESSAGE_USER_NOT_IN_THE_ROOM = {
+    'room_id': '1',
+    'user_id': '10',
+    'content': 'Hello from the otter side.',
+    'created': '907123490'
+}
+
+
+
 WRONG_MESSAGE_ID = 200
 WRONG_ROOM_ID = 200
 MESSAGES_IN_ROOM_1 = 2
@@ -281,6 +291,19 @@ class MessageDBAPITestCase(unittest.TestCase):
         # Check that the messages has been really modified through a get
         resp2 = self.connection.get_message(message_id)
         self.assertDictContainsSubset(NEW_MESSAGE, resp2)
+
+    def test_create_message_user_not_joined_to_the_room(self):
+        '''
+        Test that a new message can't be created when user not in the room.
+        '''
+        print '(' + self.test_create_message_user_not_joined_to_the_room.__name__ + ')', \
+            self.test_create_message_user_not_joined_to_the_room.__doc__
+        message_id = self.connection.create_message(NEW_MESSAGE_USER_NOT_IN_THE_ROOM['room_id'],
+                                                    NEW_MESSAGE_USER_NOT_IN_THE_ROOM['user_id'],
+                                                    NEW_MESSAGE_USER_NOT_IN_THE_ROOM['content'],
+                                                    NEW_MESSAGE_USER_NOT_IN_THE_ROOM['created'])
+        self.assertIsNone(message_id)
+
 
     def test_contains_message(self):
         '''

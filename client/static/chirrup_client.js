@@ -616,10 +616,11 @@ function init_socket() {
 }
 
 function leave_room() {
+    // these have to be modified or passed as a parameter
     console.log(room_name, nickname);
     socket.emit('left', {room_name: room_name, nickname: nickname}, function () {
         socket.disconnect();
         // redirect somewhere else or close the chat window
-        // window.location.replace('some_other_file.html');
+        window.location.replace('rooms_list.html');
     });
 }

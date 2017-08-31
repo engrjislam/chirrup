@@ -498,8 +498,7 @@ class Connection(object):
         :param str content: the message's content
         :param int timestamp: the time when the message was received in the server
 
-        :return: the id of the created message or None if the message was
-            not found.
+        :return: the id of the created message or None if user not in the room or if user or room doesn't exist.
 
         :raises ChirrupDatabaseError: if the database could not be modified.
         :raises ValueError: if parameters in wrong format
@@ -515,6 +514,11 @@ class Connection(object):
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
+
+        # Check if user in the room
+        user_in_a_room = self.room_contains_member(room_id, user_id)
+        if user_in_a_room is None or user_in_a_room is False:
+            return None
 
         # make a query to messages table
         params = (room_id, user_id, content, timestamp)
