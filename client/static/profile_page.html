@@ -28,8 +28,8 @@
 
             <div class="row">
                 <div class="col-lg-4 col-lg-offset-4">
-                    <p id="user_name">Nickname: </p>
-                    <p id="nick_name">Username: </p>
+                    <p id="user_name">Username: </p>
+                    <p id="nick_name">Nickname: </p>
 
                     <p>Change info</p>
 
@@ -69,7 +69,7 @@
             <div id="user_info" class="btn-group-vertical">
                 &nbsp;
                 <a href="http://localhost:5001/rooms_list.html" class="btn btn-default">Browse rooms</a>
-                <button class="btn btn-default deleteUser" type="button">Delete profile</button>
+                <button id="deleteUser" class="btn btn-default deleteUser" type="button">Delete profile</button>
                 <a href="http://localhost:5001/add_user.html" class="btn btn-default" type="button">Create a new
                     user</a>
 
@@ -88,7 +88,7 @@
     get_user("/users/" + userid);
 
     $("#editUser").on("click", handleEditUser);
-    $(".deleteUser").on("click", handleDeleteUser);
+    $("#deleteUser").on("click", handleDeleteUser);
 
 </script>
 
