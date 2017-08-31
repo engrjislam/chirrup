@@ -571,9 +571,17 @@ function appendMessageToList(content, sender) {
  *
  **/
 
+/**
+ * Socket.io chat
+ *
+ **/
+
+var nickname = 'rICK';
+var room_name;
+var socket;
+
 function init_socket() {
-    var socket;
-    var nickname = 'rICK';
+
     var room_name = $("#room_name").html();
     console.log(room_name);
 
@@ -616,11 +624,7 @@ function init_socket() {
 }
 
 function leave_room() {
-    // these have to be modified or passed as a parameter
-    console.log(room_name, nickname);
     socket.emit('left', {room_name: room_name, nickname: nickname}, function () {
         socket.disconnect();
-        // redirect somewhere else or close the chat window
-        window.location.replace('rooms_list.html');
     });
 }
