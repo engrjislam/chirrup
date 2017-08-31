@@ -27,7 +27,7 @@ function get_rooms(apiurl){
 
         var rooms = data["rooms-all"];
 
-        for (i = 0; i < rooms.length; i++) {
+        for (let i = 0; i < rooms.length; i++) {
 
             var room = rooms[i];
 
@@ -61,7 +61,7 @@ function get_users(apiurl){
 
         var users = data["users-all"];
 
-        for (i = 0; i < users.length; i++) {
+        for (let i = 0; i < users.length; i++) {
 
             var user = users[i];
             var name =  user.nickname;
@@ -148,7 +148,7 @@ function get_messages(apiurl){
         } else
             max_messages = messages.length - 10;
 
-        for (i = messages.length - 1; i >= max_messages; i--) {
+        for (let i = messages.length - 1; i >= max_messages; i--) {
 
             var message = messages[i];
             appendMessageToList(message.content, message.sender);
@@ -166,7 +166,7 @@ function get_messages(apiurl){
 
 function add_user(apiurl,user){
     var userData = JSON.stringify(user);
-    var nickname = user.nickname;
+    console.log(userData);
     return $.ajax({
         url: apiurl,
         type: "POST",
@@ -191,39 +191,9 @@ function add_user(apiurl,user){
         }
     });
 }
-//not needed because sockets
-function add_message(message){
-    var msgData = JSON.stringify(message);
-    var message = message.content;
-    return $.ajax({
-        url: document.location.href + "/messages/",
-        type: "POST",
-        //dataType:DEFAULT_DATATYPE,
-        data:msgData,
-        processData:false,
-        contentType: PLAINJSON
-    }).always(function(){
-
-        console.log(msgData);
-
-    }).done(function (data, textStatus, jqXHR){
-        if (DEBUG) {
-            console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
-        }
-        alert ("Message successfully added");
-        //Add the user to the list and load it.
-
-    }).fail(function (jqXHR, textStatus, errorThrown){
-        if (DEBUG) {
-            console.log ("RECEIVED ERROR: textStatus:",textStatus, ";error:",errorThrown);
-        }
-        alert ("Could not create new user:"+jqXHR.responseJSON.message);
-    });
-}
 
 function add_room(apiurl,room){
     var roomData = JSON.stringify(room);
-    var name = room.name;
     return $.ajax({
         url: SERVER_LOCATION + apiurl,
         type: "POST",
@@ -297,12 +267,11 @@ function get_members(apiurl) {
         var members = data["members-all"];
         console.log(members);
 
-        for (i = 0; i < members.length; i++) {
+        for (let i = 0; i < members.length; i++) {
 
             var member = members[i];
             var id =  member.id;
             var name = member.nickname;
-            var user_url = "/users/" + id + "/";
             appendMemberToList(name);
         }
 
@@ -343,7 +312,7 @@ function list_sender(apiurl) {
     return $.ajax({
         url: SERVER_LOCATION + apiurl,
         dataType:DEFAULT_DATATYPE,
-        processData:false,
+        processData:false
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
@@ -367,14 +336,14 @@ function replaceIdWithName(id) {
     return $.ajax({
         url: SERVER_LOCATION + "/users/" + id,
         dataType:DEFAULT_DATATYPE,
-        processData:false,
+        processData:false
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
         var name = data.nickname;
-        $( ".sender_name" ).each(function( i ) {
+        $( ".sender_name" ).each(function() {
 
             if($(this).html() == id) {
                 $(this).empty().append(name);
@@ -400,24 +369,11 @@ function serializeFormTemplate($form){
         envelope[this.id] = $(this).val();
     });
 
-    console.log(envelope);
-    /*
-    var subforms = $form.find(".form_content .subform");
-    subforms.each(function() {
-
-        var data = {}
-
-        $(this).children("input").each(function() {
-            data[this.id] = $(this).val();
-        });
-
-        envelope[this.id] = data
-    });
-    */
     return envelope;
 }
 
 function edit_user(apiurl, body){
+    console.log(JSON.stringify(body));
     $.ajax({
         url: SERVER_LOCATION + apiurl,
         type: "PUT",
@@ -669,7 +625,7 @@ function init_socket() {
     $('#text').keypress(function (e) {
         var code = e.keyCode || e.which;
         if (code == 13) {
-            text = $('#text').val();
+            var text = $('#text').val();
             $('#text').val('');
             socket.emit('text', {msg: text, room_name: room_name, nickname: nickname});
         }
