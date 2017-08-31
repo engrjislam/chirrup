@@ -87,19 +87,6 @@ function get_user(apiurl) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
         }
 
-        /*
-
-        user_id=user["user_id"],
-            username=user["username"],
-            email=user["email"],
-            status=user["status"],
-            created=user["created"],
-            updated=user["updated"],
-            nickname=user["nickname"],
-            image=user["image"]
-
-          */
-
         var $user = data;
 
         //Fill basic information from the user_basic_form
@@ -174,10 +161,6 @@ function add_user(apiurl,user){
         data:userData,
         processData:false,
         contentType: PLAINJSON
-    }).always(function(){
-
-        console.log(apiurl);
-
     }).done(function (data, textStatus, jqXHR){
         if (DEBUG) {
             console.log ("RECEIVED RESPONSE: data:",data,"; textStatus:",textStatus);
