@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Profile page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Chewy" rel="stylesheet">
+    <script type="text/javascript" src="{{url_for('static', filename='chirrup_client.js')}}"></script>
+
+</head>
+<body>
+
+
+<div class="text-center">
+    <h1 style="font-family: 'Chewy'; font-size:400%">Profile </h1>
+</div>
+<div class="text-center">
+    <img id=picture" src="profile_pic.png" alt="profile pic" onerror="this.src='/profile_pic.png';">
+</div>
+
+</div>
+
+<div class="container" align="center" id="edits">
+    <form id="user_form">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-4 col-lg-offset-4">
+                    <p id="user_name">Username: </p>
+                    <p id="nick_name">Nickname: </p>
+
+                    <p>Change info</p>
+
+                    <p>Email address:</p>
+                    <div class="input-group">
+                        <input id="email" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <p>Username:</p>
+                    <div class="input-group">
+                        <input id="username" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <p>Nickname:</p>
+                    <div class="input-group">
+                        <input id="nickname" type="text" class="form-control"/>
+                        &nbsp;
+                    </div>
+
+                    <p>Image path:</p>
+                    <div class="input-group">
+                        <input id="image" type="text" class="form-control"/>
+                    </div>
+
+                    <div class="input-group">
+                        <button id="editUser" class="btn btn-default" type="button">Save changes</button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="container text-center" style="height: 100px;">
+            <div id="user_info" class="btn-group-vertical">
+                &nbsp;
+                <a href="http://localhost:5001/rooms_list.html" class="btn btn-default">Browse rooms</a>
+                <button id="deleteUser" class="btn btn-default deleteUser" type="button">Delete profile</button>
+                <a href="http://localhost:5001/add_user.html" class="btn btn-default" type="button">Create a new
+                    user</a>
+
+            </div>
+        </div>
+</div>
+
+
+</form>
+
+</body>
+
+<script>
+
+    var userid = (document.location.href).split("/").pop(); //get the userid
+    get_user("/users/" + userid);
+
+    $("#editUser").on("click", handleEditUser);
+    $("#deleteUser").on("click", handleDeleteUser);
+
+</script>
+
+</html>

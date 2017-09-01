@@ -10,7 +10,7 @@ Provides the database API to access the forum persistent data.
 import sqlite3, os, connections
 
 #Default paths for .db and .sql files to create and populate the database.
-DEFAULT_DB_PATH = 'db/chirrup.db'
+DEFAULT_DB_PATH = "db/chirrup.db"
 DEFAULT_SCHEMA = "db/chirrup_schema_dump.sql"
 DEFAULT_DATA_DUMP = "db/chirrup_data_dump.sql"
 
