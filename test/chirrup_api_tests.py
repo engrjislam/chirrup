@@ -138,7 +138,7 @@ class UsersTestCase(ResourcesAPITestCase):
         Checks that the URL points to the right resource
         """
         #NOTE: self.shortDescription() shuould work.
-        _url = "/users"
+        _url = "/users/"
         print "("+self.test_url.__name__+")", self.test_url.__doc__,
         with resources.app.test_request_context(_url):
             rule = flask.request.url_rule
@@ -429,7 +429,7 @@ class MessagesTestCase(ResourcesAPITestCase):
 
     ROOM_ID = 1
     ROOM_ID_WRONG = 2000
-    url = '/rooms/{}/messages'.format(ROOM_ID)   
+    url = '/rooms/{}/messages/'.format(ROOM_ID)   
 
     #Existing user
     message_for_exiting_user = {
