@@ -22,8 +22,7 @@ MASONJSON = "application/vnd.mason+json"
 JSON = "application/json"
 CHIRRUP_USER_PROFILE ="/profiles/user-profile/"
 CHIRRUP_MESSAGE_PROFILE = "/profiles/message-profile/"
-CHIRRUP_ROOM_PROFILE = "/profiles/message-profile/"
-CHIRRUP_MESSAGE_PROFILE = "/profiles/message-profile/"
+CHIRRUP_ROOM_PROFILE = "/profiles/room-profile/"
 
 #Tell Flask that I am running it in testing mode.
 resources.app.config["TESTING"] = True
@@ -75,7 +74,7 @@ class ResourcesAPITestCase(unittest.TestCase):
         ENGINE.clear()
         self.app_context.pop()
 
-class UsersTestCase (ResourcesAPITestCase):
+class UsersTestCase(ResourcesAPITestCase):
 
     user_1_request = {
 	    "username": "testuser1",
@@ -139,7 +138,7 @@ class UsersTestCase (ResourcesAPITestCase):
         Checks that the URL points to the right resource
         """
         #NOTE: self.shortDescription() shuould work.
-        _url = "/users/"
+        _url = "/users"
         print "("+self.test_url.__name__+")", self.test_url.__doc__,
         with resources.app.test_request_context(_url):
             rule = flask.request.url_rule
@@ -167,7 +166,6 @@ class UsersTestCase (ResourcesAPITestCase):
         
         add_ctrl = controls["add-user"]
         self.assertIn("href", add_ctrl)
-        self.assertEquals(add_ctrl["href"], "/users/")
         self.assertIn("method", add_ctrl)
         self.assertEquals(add_ctrl["method"], "POST")
 
@@ -196,7 +194,7 @@ class UsersTestCase (ResourcesAPITestCase):
 			
     def test_get_users_mimetype(self):
         """
-        Checks that GET Messages return correct status code and data format
+        Checks that GET Users return correct status code and data format
         """
         print "("+self.test_get_users_mimetype.__name__+")", self.test_get_users_mimetype.__doc__
 
@@ -303,7 +301,7 @@ class UsersTestCase (ResourcesAPITestCase):
                                )
         self.assertEquals(resp.status_code, 415)
 		
-class UserTestCase (ResourcesAPITestCase):
+class UserTestCase(ResourcesAPITestCase):
 
     USER_ID_1 = 1
     USER_ID_2 = 20000
@@ -356,17 +354,15 @@ class UserTestCase (ResourcesAPITestCase):
             data = json.loads(resp.data)
 
             controls = data["@controls"]
-            self.assertIn("private-data", controls)
-            self.assertIn("delete", controls)
 
             # Check self-control
-            self.assertIn("title", controls["private-data"])
-            self.assertIn("href", controls["private-data"])
-            self.assertIn("method", controls["private-data"])
-            self.assertIn("encoding", controls["private-data"])
+            self.assertIn("self", controls)
+            self.assertIn("profile", controls)
+            self.assertIn("users", controls)
+            self.assertIn("user-rooms", controls)
 
             # Check collection url
-            users_info = data["users-info"]
+            users_info = data
             self.assertIn("user_id", users_info)
             self.assertIn("username", users_info)
             self.assertIn("email", users_info)
@@ -429,11 +425,11 @@ class UserTestCase (ResourcesAPITestCase):
         resp = self.client.delete(self.url_wrong)
         self.assertEquals(resp.status_code, 404)
 		
-class MessagesTestCase (ResourcesAPITestCase): 
+class MessagesTestCase(ResourcesAPITestCase): 
 
     ROOM_ID = 1
     ROOM_ID_WRONG = 2000
-    url = '/rooms/{}/messages/'.format(ROOM_ID)   
+    url = '/rooms/{}/messages'.format(ROOM_ID)   
 
     #Existing user
     message_for_exiting_user = {
@@ -489,7 +485,7 @@ class MessagesTestCase (ResourcesAPITestCase):
         self.assertEquals(controls["self"]["href"], self.url)
 
         #Check that items are correct.
-        items = data["rooms"]
+        items = data["messages-all"]
         #self.assertEquals(len(items), initial_messages)
         for item in items:
             self.assertIn("content", item)
@@ -497,6 +493,8 @@ class MessagesTestCase (ResourcesAPITestCase):
             self.assertIn("timestamp", item)
             self.assertIn("@controls", item)
             self.assertIn("self", item["@controls"])
+            self.assertIn("profile", item["@controls"])
+            self.assertIn("delete", item["@controls"])
             self.assertIn("href", item["@controls"]["self"])
 			# extract id using regular expression from
 			# href = item["@controls"]["self"]["href"] i.e
@@ -581,7 +579,7 @@ class MessagesTestCase (ResourcesAPITestCase):
                                )
         self.assertTrue(resp.status_code == 400)
 
-class MessageTestCase (ResourcesAPITestCase):
+class MessageTestCase(ResourcesAPITestCase):
 
     MESSAGE_ID = 1
     MESSAGE_ID_WRONG = 2000
@@ -666,7 +664,7 @@ class MessageTestCase (ResourcesAPITestCase):
         resp = self.client.delete(self.url_wrong)
         self.assertEquals(resp.status_code, 404)
 
-class RoomsTestCase (ResourcesAPITestCase):
+class RoomsTestCase(ResourcesAPITestCase):
 
 	# add this as new & existing
     add_room_1_request = {
@@ -898,7 +896,7 @@ class RoomsTestCase (ResourcesAPITestCase):
         self.assertEquals(resp.status_code, 409)    
     '''
 	
-class RoomTestCase (ResourcesAPITestCase):
+class RoomTestCase(ResourcesAPITestCase):
 
     ROOM_ID_1 = 1
     ROOM_ID_2 = 20000
@@ -928,18 +926,18 @@ class RoomTestCase (ResourcesAPITestCase):
         Checks that GET Room returns correct status code and data format
         """
         print "(" + self.test_get_room.__name__ + ")", self.test_get_room.__doc__
+		
         with resources.app.test_client() as client:
             resp = client.get(self.url1)
             self.assertEquals(resp.status_code, 200)
             data = json.loads(resp.data)
 
             # Check collection url
-            rooms_info = data["rooms-info"]
+            rooms_info = data
             self.assertIn("room_id", rooms_info)
             self.assertIn("name", rooms_info)
             self.assertIn("admin", rooms_info)
             self.assertIn("created", rooms_info)
-            self.assertIn("updated", rooms_info)
             self.assertIn("updated", rooms_info)
 			
 			# rooms_info controls
@@ -947,8 +945,6 @@ class RoomTestCase (ResourcesAPITestCase):
             rooms_info_controls = rooms_info["@controls"]
             self.assertIn("self", rooms_info_controls)
             self.assertIn("href", rooms_info_controls["self"])
-            self.assertIn("rooms", rooms_info_controls)
-            self.assertIn("href", rooms_info_controls["rooms"])
 
     def test_delete_room(self):
         """
@@ -967,8 +963,263 @@ class RoomTestCase (ResourcesAPITestCase):
         print "("+self.test_delete_nonexisting_room.__name__+")", self.test_delete_nonexisting_room.__doc__
         resp = self.client.delete(self.url_wrong)
         self.assertEquals(resp.status_code, 404)
+
+class UserRoomsTestCase(ResourcesAPITestCase):
+
+    USER_ID_1 = 1
+    USER_ID_2 = 5000000
+
+    def setUp(self):
+        super(UserRoomsTestCase, self).setUp()
+        self.url = resources.api.url_for(resources.UserRooms,
+                                         userid=self.USER_ID_1,
+                                         _external=False)
+        self.url_wrong = resources.api.url_for(resources.UserRooms,
+                                         userid=self.USER_ID_2,
+                                         _external=False)
+
+    def test_url(self):
+        """
+        Checks that the URL points to the right resource
+        """
+        #NOTE: self.shortDescription() shuould work.
+        print "("+self.test_url.__name__+")", self.test_url.__doc__,
+        with resources.app.test_request_context(self.url):
+            rule = flask.request.url_rule
+            view_point = resources.app.view_functions[rule.endpoint].view_class
+            self.assertEquals(view_point, resources.UserRooms)
+		
+    def test_get_user_rooms_mimetype(self):
+        """
+        Checks that GET UserRooms return correct status code and data format
+        """
+        print "("+self.test_get_user_rooms_mimetype.__name__+")", self.test_get_user_rooms_mimetype.__doc__
+
+        #Check that I receive status code 200
+        resp = self.client.get(self.url)
+        self.assertEquals(resp.status_code, 200)
+        self.assertEquals(resp.headers.get("Content-Type",None),
+                          "{};{}".format(MASONJSON, CHIRRUP_ROOM_PROFILE))
+    
+    def test_get_user_rooms_for_nonexisting_user(self):
+        """
+        Checks that GET UserRooms return correct status code if user is not exists
+        """
+        print "("+self.test_get_user_rooms_for_nonexisting_user.__name__+")", self.test_get_user_rooms_for_nonexisting_user.__doc__
+        resp = self.client.get(self.url_wrong)
+        self.assertEquals(resp.status_code, 404)
+
+    def test_get_user_rooms(self):
+        """
+        Checks that GET UserRooms of a User returns correct status code and data format
+        """
+        print "(" + self.test_get_user_rooms.__name__ + ")", self.test_get_user_rooms.__doc__
+        with resources.app.test_client() as client:
+            resp = client.get(self.url)
+            self.assertEquals(resp.status_code, 200)
+            data = json.loads(resp.data)
+
+            # Check collection url
+            user_rooms = data["items"]
+            for user_room in user_rooms:
+                self.assertIn("room_id", user_room)
+                self.assertIn("name", user_room)
+                self.assertIn("admin", user_room)
+                self.assertIn("status", user_room)
+                self.assertIn("created", user_room)
+                self.assertIn("updated", user_room)
+                self.assertIn("joined", user_room)
+
+class JoinRoomTestCase(ResourcesAPITestCase):
+
+    ROOM_ID_1 = 6
+    ROOM_ID_2 = 5000000
+
+    USER_ID_1 = 6
+    USER_ID_2 = 5000000
+    
+    join_room_1_request = {
+		"user_id" : USER_ID_1
+	}
+    
+    join_room_2_request = {
+		"user_id" : USER_ID_2
+	}
+
+    def setUp(self):
+        super(JoinRoomTestCase, self).setUp()
+        self.url = resources.api.url_for(resources.JoinRoom,
+                                         roomid=self.ROOM_ID_1,
+                                         _external=False)
+        self.url_wrong = resources.api.url_for(resources.JoinRoom,
+                                         roomid=self.ROOM_ID_2,
+                                         _external=False)
+
+    def test_wrong_media_type(self):
+        """
+        Test that return adequate error if sent incorrect media type
+        """
+        print "("+self.test_wrong_media_type.__name__+")", self.test_wrong_media_type.__doc__
+		
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": "text/html"},
+                                data=json.dumps(self.join_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 415)
+										 
+    def test_join_room(self):
+        """
+        Checks that the user is added in a room correctly
+
+        """
+        print "("+self.test_join_room.__name__+")", self.test_join_room.__doc__
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.join_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 201)
+        self.assertIn("Location", resp.headers)
+        url = resp.headers["Location"]
+        resp2 = self.client.get(url)
+        self.assertEquals(resp2.status_code, 200)
+
+        # With existing room_id & user_id
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.join_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 409)
+
+    def test_join_room_with_non_existing_user(self):
+        """
+        Checks that the nonexistig user will not added in a room 
+
+        """
+        print "("+self.test_join_room_with_non_existing_user.__name__+")", self.test_join_room_with_non_existing_user.__doc__
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.join_room_2_request)
+                               )
+        self.assertEquals(resp.status_code, 404)
+
+    def test_join_room_with_non_existing_room(self):
+        """
+        Checks that adding user into the nonexistig room will fail 
+
+        """
+        print "("+self.test_join_room_with_non_existing_room.__name__+")", self.test_join_room_with_non_existing_room.__doc__
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url_wrong,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.join_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 404)
+
+class LeaveRoomTestCase(ResourcesAPITestCase):
+
+    ROOM_ID_1 = 5
+    ROOM_ID_2 = 5000000
+
+    USER_ID_1 = 5
+    USER_ID_2 = 5000000
+    
+    leave_room_1_request = {
+		"user_id" : USER_ID_1
+	}
+    
+    leave_room_2_request = {
+		"user_id" : USER_ID_2
+	}
+
+    def setUp(self):
+        super(LeaveRoomTestCase, self).setUp()
+        self.url = resources.api.url_for(resources.LeaveRoom,
+                                         roomid=self.ROOM_ID_1,
+                                         _external=False)
+        self.url_wrong = resources.api.url_for(resources.LeaveRoom,
+                                         roomid=self.ROOM_ID_2,
+                                         _external=False)
+
+    def test_wrong_media_type(self):
+        """
+        Test that return adequate error if sent incorrect media type
+        """
+        print "("+self.test_wrong_media_type.__name__+")", self.test_wrong_media_type.__doc__
+		
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": "text/html"},
+                                data=json.dumps(self.leave_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 415)
+										 
+    def test_leave_room(self):
+        """
+        Checks that the user is leaved from a room correctly
+
+        """
+        print "("+self.test_leave_room.__name__+")", self.test_leave_room.__doc__
+		
+        # With existing room_id & user_id 
+        resp = self.client.post(resources.api.url_for(resources.JoinRoom,
+                                         roomid=self.ROOM_ID_1,
+                                         _external=False),
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.leave_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 201)
+        self.assertIn("Location", resp.headers)
+        url = resp.headers["Location"]
+        resp2 = self.client.get(url)
+        self.assertEquals(resp2.status_code, 200)
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.leave_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 204)
+
+        # With existing room_id & user_id
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.leave_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 409)
+
+    def test_leave_room_with_non_existing_user(self):
+        """
+        Checks that the nonexistig user will not leave from a room 
+
+        """
+        print "("+self.test_leave_room_with_non_existing_user.__name__+")", self.test_leave_room_with_non_existing_user.__doc__
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.leave_room_2_request)
+                               )
+        self.assertEquals(resp.status_code, 404)
+
+    def test_leave_room_with_non_existing_room(self):
+        """
+        Checks that leaving user from the nonexistig room will fail 
+
+        """
+        print "("+self.test_leave_room_with_non_existing_room.__name__+")", self.test_leave_room_with_non_existing_room.__doc__
+
+        # With existing room_id & user_id 
+        resp = self.client.post(self.url_wrong,
+                                headers={"Content-Type": JSON},
+                                data=json.dumps(self.leave_room_1_request)
+                               )
+        self.assertEquals(resp.status_code, 404)
 	
-class MembersTestCase (ResourcesAPITestCase):
+class MembersTestCase(ResourcesAPITestCase):
 
     ROOM_ID_1 = 1
     ROOM_ID_2 = 20000
@@ -1009,16 +1260,20 @@ class MembersTestCase (ResourcesAPITestCase):
             self.assertIn("href", controls["self"])
 
             # Check collection url
-            room_members = data["room-members"]
+            room_members = data["members-all"]
             for room_member in room_members:
-                self.assertIn("id", room_member)
-                self.assertIn("room_id", room_member)
                 self.assertIn("user_id", room_member)
-                self.assertIn("joined", room_member)
+                self.assertIn("username", room_member)
+                self.assertIn("email", room_member)
+                self.assertIn("status", room_member)
+                self.assertIn("created", room_member)
+                self.assertIn("updated", room_member)
+                self.assertIn("nickname", room_member)
+                self.assertIn("image", room_member)
 
     def test_get_nonexisting_room_members(self):
         """
-        Checks that Delete Room return correct status code if not exists
+        Checks that GET room member return correct status code if not exists
         """
         print "("+self.test_get_nonexisting_room_members.__name__+")", self.test_get_nonexisting_room_members.__doc__
         resp = self.client.get(self.url_wrong)
