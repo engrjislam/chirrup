@@ -13,3 +13,10 @@ Runs on port 5000. Only one server can be run at a time.
 Start address in "http://localhost:5001/rooms_list.html".
 
 6.Run all tests: "python run_tests.py".
+
+
+
+Full Documentation:
+
+The full documentation will be found in the following link
+http://confluence.atlassian.virtues.fi/x/BgPBAQ 
